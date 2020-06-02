@@ -854,6 +854,44 @@ mapping:
           starting with 20.05 Galaxy will try to default to 'uuid' if it can be sure this
           is a new Galaxy instance - but the default will be 'id' in many cases.
 
+      enable_user_based_object_store:
+        type: bool
+        default: false
+        required: false
+        desc: |
+          Enables and disables the user-based object store feature.
+
+      default_storage_media_jobs_directory:
+        type: str
+        default: job_working_directory_storage_media
+        path_resolves_to: data_dir
+        required: false
+        desc: |
+          Sets a base default jobs working directory for all users storage media, where each
+          storage media will have a sperate folder under this path named with the media's encoded ID.
+          This attribute is set for each media independency in storage_media table; hence,
+          admins may modify records in that table to define user/media-specific path.
+
+      default_storage_media_cache_path:
+        type: str
+        default: storage_media_cache
+        path_resolves_to: data_dir
+        required: false
+        desc: |
+          Sets a base default cache path for all users storage media, where each storage media
+          will have a separate folder under this path named with the media's encoded ID.
+          This attribute is set for each media independency in storage_media table; hence,
+          admins may modify records in that table to define user/media-specific path.
+
+      default_storage_media_cache_size:
+        type: int
+        default: 100
+        required: false
+        desc: |
+          Sets a default cache size for all users storage media; in Gigabytes. This attribute
+          is set for each media independency in storage_media table; hence, admins may modify
+          records in that table to define user/media-specific path.
+
       smtp_server:
         type: str
         required: false

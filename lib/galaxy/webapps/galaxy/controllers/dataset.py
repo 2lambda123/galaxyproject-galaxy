@@ -836,7 +836,12 @@ class DatasetInterface(BaseUIController, UsesAnnotations, UsesItemRatings, UsesE
             # HDA is purgeable
             # Decrease disk usage first
             if user:
-                user.adjust_total_disk_usage(-hda.quota_amount(user))
+                if not hda.dataset.has_active_storage_media():
+                    user.adjust_total_disk_usage(-hda.quota_amount(user))
+                else:
+                    for assoc in hda.dataset.active_storage_media_associations:
+                        assoc.storage_media.add_usage(-hda.quota_amount(user))
+                        trans.sa_session.flush()
             # Mark purged
             hda.purged = True
             trans.sa_session.add(hda)

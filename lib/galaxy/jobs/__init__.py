@@ -972,6 +972,20 @@ class JobWrapper(HasResourceParameters):
     def use_metadata_binary(self):
         return util.asbool(self.get_destination_configuration('use_metadata_binary', "False"))
 
+    def __assign_media(self, job, dataset):
+        if self.app.config.enable_user_based_object_store and job.user:
+            all_user_media = job.user.active_storage_media
+            if job.history is None:
+                is_history_shared = False
+            else:
+                is_history_shared = self.sa_session.query(
+                    self.app.model.HistoryUserShareAssociation).filter_by(history_id=job.history.id).first() is not None
+            selected_media = model.StorageMedia.choose_media_for_association(
+                all_user_media,
+                history_shared=is_history_shared)
+            if selected_media is not None:
+                selected_media.associate_with_dataset(dataset)
+
     def can_split(self):
         # Should the job handler split this job up?
         return self.app.config.use_tasked_jobs and self.tool.parallelism
@@ -1477,6 +1491,7 @@ class JobWrapper(HasResourceParameters):
         # afterward. State below needs to happen the same way.
         for dataset_assoc in job.output_datasets + job.output_library_datasets:
             dataset = dataset_assoc.dataset
+            self.__assign_media(job, dataset.dataset)
             object_store_populator.set_object_store_id(dataset)
 
         job.object_store_id = object_store_populator.object_store_id
@@ -1736,7 +1751,12 @@ class JobWrapper(HasResourceParameters):
         for dataset_assoc in job.output_datasets:
             if not dataset_assoc.dataset.dataset.purged:
                 dataset_assoc.dataset.dataset.set_total_size()
-                collected_bytes += dataset_assoc.dataset.dataset.get_total_size()
+                if not dataset_assoc.dataset.dataset.has_active_storage_media():
+                    collected_bytes += dataset_assoc.dataset.dataset.get_total_size()
+                else:
+                    for assoc in dataset_assoc.dataset.dataset.active_storage_media_associations:
+                        assoc.storage_media.add_usage(dataset_assoc.dataset.dataset.get_total_size())
+                        self.sa_session.flush()
 
         if job.user:
             job.user.adjust_total_disk_usage(collected_bytes)

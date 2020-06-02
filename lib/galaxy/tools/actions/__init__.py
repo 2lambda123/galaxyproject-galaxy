@@ -359,7 +359,7 @@ class DefaultToolAction(object):
         # datasets first, then create the associations
         parent_to_child_pairs = []
         child_dataset_names = set()
-        object_store_populator = ObjectStorePopulator(app)
+        object_store_populator = ObjectStorePopulator(app, user=trans.user)
         async_tool = tool.tool_type == 'data_source_async'
 
         def handle_output(name, output, hidden=None):
@@ -413,7 +413,7 @@ class DefaultToolAction(object):
             if not completed_job and trans.app.config.legacy_eager_objectstore_initialization:
                 # Must flush before setting object store id currently.
                 trans.sa_session.flush()
-                object_store_populator.set_object_store_id(data)
+                object_store_populator.set_object_store_id(data=data)
 
             # This may not be neccesary with the new parent/child associations
             data.designation = name

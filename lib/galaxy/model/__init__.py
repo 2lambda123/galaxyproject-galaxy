@@ -594,6 +594,9 @@ class User(Dictifiable, RepresentById):
     def is_active(self):
         return self.active
 
+    def has_active_storage_media(self):
+        return len(self.active_storage_media) > 0
+
     def is_authenticated(self):
         # TODO: is required for python social auth (PSA); however, a user authentication is relative to the backend.
         # For instance, a user who is authenticated with Google, is not necessarily authenticated
@@ -602,6 +605,93 @@ class User(Dictifiable, RepresentById):
         # seems reasonable. Besides, this is also how a PSA example is implemented:
         # https://github.com/python-social-auth/social-examples/blob/master/example-cherrypy/example/db/user.py
         return True
+
+
+class StorageMedia(object):
+    categories = Bunch(LOCAL="local")
+
+    def __init__(self, user_id, category, path,
+                 usage=0, purgeable=True, jobs_directory=None, cache_path=None,
+                 cache_size=100):
+        """
+        Initializes a storage media.
+        :param user_id: the Galaxy user id for whom this storage media is defined.
+        :param category: is the type of this storage media, its value is a key from `categories` bunch.
+        :param path: a path in the storage media to be used. For instance, a path on a local disk, or bucket name
+        on AWS, or container name on Azure.
+        :param usage: sets the total size of the data Galaxy has persisted on the media.
+        """
+        self.user_id = user_id
+        self.usage = usage
+        self.category = category
+        self.path = path
+        self.deleted = False
+        self.purged = False
+        self.purgeable = purgeable
+        self.jobs_directory = jobs_directory
+        self.cache_path = cache_path
+        self.cache_size = cache_size
+
+    def associate_with_dataset(self, dataset):
+        qres = object_session(self).query(StorageMediaDatasetAssociation).join(Dataset)\
+            .filter(StorageMediaDatasetAssociation.table.c.dataset_id == dataset.id)\
+            .filter(StorageMediaDatasetAssociation.table.c.storage_media_id == self.id).all()
+        if len(qres) > 0:
+            log.error('An attempt to create a duplicate StorageMediaDatasetAssociation is blocked. A duplicated file'
+                      ', with the same or different file name as the original file, for the dataset with ID `{}` might'
+                      ' be uploaded to the storage media with ID `{}`.'.format(self.id, dataset.id))
+            return
+        association = StorageMediaDatasetAssociation(dataset, self)
+        object_session(self).add(association)
+        object_session(self).flush()
+
+    def is_purgeable(self):
+        if self.purgeable is False:
+            return False
+        for assoc in self.data_association:
+            if assoc.dataset.purgable is False:
+                return False
+        return True
+
+    def add_usage(self, amount):
+        self.usage = self.usage + amount
+
+    def get_config(self, cache_path, jobs_directory):
+        config = Bunch(
+            object_store_store_by="uuid",
+            object_store_config_file=None,
+            object_store_check_old_style=False,
+            object_store_cache_path=cache_path,
+            jobs_directory=jobs_directory,
+            file_path=self.path,
+            new_file_path=self.path,
+            umask=os.umask(0o77),
+            gid=os.getgid(),
+        )
+        return config
+
+    @staticmethod
+    def choose_media_for_association(media, history_shared=False):
+        if media is None or len(media) == 0:
+            return None
+
+        if history_shared:
+            log.debug("The history to which this dataset belongs to, is shared with another user, "
+                      "hence cannot choose a user's storage media.")
+            return None
+
+        if len(media) == 1:
+            return media[0]
+        return None
+
+
+class StorageMediaDatasetAssociation(object):
+    def __init__(self, dataset, storage_media, deleted=False, purged=False):
+        self.dataset_id = dataset.id
+        self.storage_media_id = storage_media.id
+        self.dataset_path_on_media = None
+        self.deleted = deleted
+        self.purged = purged
 
 
 class PasswordResetToken(object):
@@ -1666,7 +1756,13 @@ class History(HasTags, Dictifiable, UsesAnnotations, HasName, RepresentById):
             if set_hid:
                 dataset.hid = self._next_hid()
         if quota and self.user:
-            self.user.adjust_total_disk_usage(dataset.quota_amount(self.user))
+            if not dataset.dataset.has_active_storage_media():
+                self.user.adjust_total_disk_usage(dataset.quota_amount(self.user))
+            else:
+                for assoc in dataset.dataset.active_storage_media_associations:
+                    assoc.storage_media.add_usage(dataset.quota_amount(self.user))
+                    object_session(self).flush()
+
         dataset.history = self
         if genome_build not in [None, '?']:
             self.genome_build = genome_build
@@ -1681,9 +1777,18 @@ class History(HasTags, Dictifiable, UsesAnnotations, HasName, RepresentById):
         optimize = len(datasets) > 1 and parent_id is None and all_hdas and set_hid
         if optimize:
             self.__add_datasets_optimized(datasets, genome_build=genome_build)
-            if quota and self.user:
-                disk_usage = sum([d.get_total_size() for d in datasets])
-                self.user.adjust_total_disk_usage(disk_usage)
+            if self.user:
+                disk_usage = 0
+                for dataset in datasets:
+                    if not dataset.dataset.has_active_storage_media():
+                        disk_usage += dataset.get_total_size()
+                    else:
+                        for assoc in dataset.dataset.active_storage_media_associations:
+                            assoc.storage_media.add_usage(dataset.get_total_size())
+                            if flush:
+                                sa_session.flush()
+                if quota and disk_usage > 0:
+                    self.user.adjust_total_disk_usage(disk_usage)
             sa_session.add_all(datasets)
             if flush:
                 sa_session.flush()
@@ -2338,6 +2443,7 @@ class Dataset(StorableObject, RepresentById):
 
     def mark_deleted(self):
         self.deleted = True
+        self.storage_media_associations.deleted = True
 
     # FIXME: sqlalchemy will replace this
     def _delete(self):
@@ -2364,6 +2470,8 @@ class Dataset(StorableObject, RepresentById):
         # TODO: purge metadata files
         self.deleted = True
         self.purged = True
+        self.storage_media_associations.deleted = True
+        self.storage_media_associations.purged = True
 
     def get_access_roles(self, trans):
         roles = []
@@ -2408,6 +2516,9 @@ class Dataset(StorableObject, RepresentById):
         )
         serialization_options.attach_identifier(id_encoder, self, rval)
         return rval
+
+    def has_active_storage_media(self):
+        return len(self.active_storage_media_associations) > 0
 
 
 class DatasetSource(RepresentById):
@@ -2602,8 +2713,8 @@ class DatasetInstance(object):
         return self.dataset.get_size()
 
     def set_size(self, **kwds):
-        """Sets and gets the size of the data on disk"""
-        return self.dataset.set_size(**kwds)
+        """Sets the size of the data on disk"""
+        self.dataset.set_size(**kwds)
 
     def get_total_size(self):
         return self.dataset.get_total_size()
@@ -3145,6 +3256,7 @@ class HistoryDatasetAssociation(DatasetInstance, HasTags, Dictifiable, UsesAnnot
         # Gets an HDA disk usage, if the user does not already
         #   have an association of the same dataset
         if not self.dataset.library_associations and not self.purged and not self.dataset.purged:
+            # FIXME: check the active storage media association of this dataset, and add to rval only if dataset is not stored on user's media.
             for hda in self.dataset.history_associations:
                 if hda.id == self.id:
                     continue
