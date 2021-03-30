@@ -447,6 +447,8 @@ class DefaultToolAction(ToolAction):
         async_tool = tool.tool_type == "data_source_async"
 
         def handle_output(name, output, hidden=None):
+            log.error(f"handle_output name {name}")
+            log.error(f"handle_output output {output}")
             if output.parent:
                 parent_to_child_pairs.append((output.parent, name))
                 child_dataset_names.add(name)
@@ -1142,6 +1144,11 @@ def determine_output_format(
                 pass
         ext = random_input_ext
     format_source = output.format_source
+    log.error(f"determine_output_format output.name {output.name}")
+    log.error(f"determine_output_format format_source {format_source}")
+    log.error(f"determine_output_format input_datasets {input_datasets}")
+    log.error(f"determine_output_format format_source in input_datasets {format_source in input_datasets}")
+
     if format_source is not None and format_source in input_datasets:
         try:
             input_dataset = input_datasets[output.format_source]

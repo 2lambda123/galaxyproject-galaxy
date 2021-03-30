@@ -73,6 +73,7 @@ class ModelPersistenceContext(metaclass=abc.ABCMeta):
         filename=None,
         extra_files=None,
         metadata_source_name=None,
+        format_source_name=None,
         info=None,
         library_folder=None,
         link_data=False,
@@ -87,6 +88,7 @@ class ModelPersistenceContext(metaclass=abc.ABCMeta):
         creating_job_id=None,
         storage_callbacks=None,
     ):
+        log.error(f"create_dataset format_source_name {format_source_name}")
         tag_list = tag_list or []
         sources = sources or []
         hashes = hashes or []
@@ -171,6 +173,12 @@ class ModelPersistenceContext(metaclass=abc.ABCMeta):
         # designation.
         if name is not None:
             primary_data.name = name
+
+        log.error(f"create_dataset primary_data.ext {primary_data.ext}")
+        if format_source_name and not primary_data.ext:
+            metadata_source = self.metadata_source_provider.get_metadata_source(format_source_name)
+            log.error(f"create_dataset metadata_source {metadata_source}")
+            primary_data.change_datatype(metadata_source.ext)
 
         # Copy metadata from one of the inputs if requested.
         if metadata_source_name:
@@ -260,13 +268,20 @@ class ModelPersistenceContext(metaclass=abc.ABCMeta):
                 log.exception("Exception occured while setting dataset peek")
 
     def populate_collection_elements(
-        self, collection, root_collection_builder, filenames, name=None, metadata_source_name=None, final_job_state="ok"
+        self, collection, root_collection_builder, filenames, name=None, metadata_source_name=None, format_source_name=None, final_job_state="ok"
     ):
         # TODO: allow configurable sorting.
         #    <sort by="lexical" /> <!-- default -->
         #    <sort by="reverse_lexical" />
         #    <sort regex="example.(\d+).fastq" by="1:numerical" />
         #    <sort regex="part_(\d+)_sample_([^_]+).fastq" by="2:lexical,1:numerical" />
+        log.error(f"populate_collection_elements collection {collection}")
+        log.error(f"populate_collection_elements root_collection_builder {root_collection_builder}")
+        log.error(f"populate_collection_elements filenames {filenames}")
+        log.error(f"populate_collection_elements name {name}")
+        log.error(f"populate_collection_elements format_source_name {format_source_name}")
+        log.error(f"populate_collection_elements metadata_source_name {metadata_source_name}")
+
         if name is None:
             name = "unnamed output"
         if self.flush_per_n_datasets and self.flush_per_n_datasets > 0:
@@ -276,7 +291,8 @@ class ModelPersistenceContext(metaclass=abc.ABCMeta):
                     name=name,
                     root_collection_builder=root_collection_builder,
                     metadata_source_name=metadata_source_name,
-                    final_job_state=final_job_state,
+                    format_source_name=format_source_name,
+                    final_job_state=final_job_state
                 )
                 if len(chunk) == self.flush_per_n_datasets:
                     # In most cases we don't need to flush, that happens in the caller.
@@ -289,10 +305,11 @@ class ModelPersistenceContext(metaclass=abc.ABCMeta):
                 name=name,
                 root_collection_builder=root_collection_builder,
                 metadata_source_name=metadata_source_name,
-                final_job_state=final_job_state,
+                format_source_name=format_source_name,
+                final_job_state=final_job_state
             )
 
-    def _populate_elements(self, chunk, name, root_collection_builder, metadata_source_name, final_job_state):
+    def _populate_elements(self, chunk, name, root_collection_builder, metadata_source_name, format_source_name, final_job_state):
         element_datasets: Dict[str, List[Any]] = {
             "element_identifiers": [],
             "datasets": [],
@@ -331,6 +348,7 @@ class ModelPersistenceContext(metaclass=abc.ABCMeta):
                 dbkey=dbkey,
                 name=dataset_name,
                 metadata_source_name=metadata_source_name,
+                format_source_name=format_source_name,
                 link_data=link_data,
                 sources=sources,
                 hashes=hashes,
