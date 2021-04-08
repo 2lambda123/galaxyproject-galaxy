@@ -147,10 +147,12 @@ class DefaultToolAction(ToolAction):
                     # are stored as name1, name2, ...
                     for i, v in enumerate(value):
                         processed_dataset = process_dataset(v)
+                        log.error(f"ADD DTP list input.name {input.name} i+1 {i+1}")
                         if i == 0:
                             # Allow copying metadata to output, first item will be source.
                             input_datasets[prefix + input.name] = processed_dataset
                         input_datasets[prefix + input.name + str(i + 1)] = processed_dataset
+                        log.error(f"==> input_datasets {input_datasets}")
                         conversions = []
                         for conversion_name, conversion_extensions, conversion_datatypes in input.conversions:
                             new_data = process_dataset(
@@ -178,7 +180,9 @@ class DefaultToolAction(ToolAction):
                                     i
                                 ] = conversion_data.id  # a more robust way to determine JSONable value is desired
                 else:
+                    log.error(f"ADD DTP !list input.name {input.name}")
                     input_datasets[prefix + input.name] = process_dataset(value)
+                    log.error(f"==> input_datasets {input_datasets}")
                     conversions = []
                     for conversion_name, conversion_extensions, conversion_datatypes in input.conversions:
                         new_data = process_dataset(input_datasets[prefix + input.name], conversion_datatypes)
@@ -235,7 +239,9 @@ class DefaultToolAction(ToolAction):
                         processed_dataset = process_dataset(v)
                         if processed_dataset is not v:
                             processed_dataset_dict[v] = processed_dataset
+                    log.error(f"ADD DCTP input.name {input.name} i+1 {i+1}")
                     input_datasets[prefix + input.name + str(i + 1)] = processed_dataset or v
+                    log.error(f"==> input_datasets {input_datasets}")
                 if conversion_required:
                     collection_type_description = (
                         trans.app.dataset_collection_manager.collection_type_descriptions.for_collection_type(
