@@ -1841,8 +1841,9 @@ class JobWrapper(HasResourceParameters):
                 self.version_string = collect_shrinked_content_from_path(version_filename)
 
         output_dataset_associations = job.output_datasets + job.output_library_datasets
-        inp_data, out_data, out_collections = job.io_dicts()
+        inp_data, inp_collections, out_data, out_collections = job.io_dicts()
         log.error(f"inp_data {inp_data}")
+        log.error(f"inp_collections {inp_collections}")
 
         if not extended_metadata:
             # importing metadata will discover outputs if extended metadata
@@ -1862,7 +1863,7 @@ class JobWrapper(HasResourceParameters):
                 if not final_job_state == job.states.ERROR:
                     dataset_assoc.dataset.dataset.state = model.Dataset.states.OK
             try:
-                self.discover_outputs(job, inp_data, out_data, out_collections, final_job_state=final_job_state)
+                self.discover_outputs(job, inp_data, inp_collections, out_data, out_collections, final_job_state=final_job_state)
             except MaxDiscoveredFilesExceededError as e:
                 final_job_state = job.states.ERROR
                 job.job_messages = [str(e)]
@@ -1947,10 +1948,12 @@ class JobWrapper(HasResourceParameters):
         self.cleanup(delete_files=delete_files)
         log.debug(finish_timer.to_str(job_id=self.job_id, tool_id=job.tool_id))
 
-    def discover_outputs(self, job, inp_data, out_data, out_collections, final_job_state):
-        # Try to just recover input_ext and dbkey from job parameters (used and set in
-        # galaxy.tools.actions). Old jobs may have not set these in the job parameters
-        # before persisting them.
+    def discover_outputs(self, job, inp_data, inp_collections, out_data, out_collections, final_job_state):
+        """
+        Try to just recover input_ext and dbkey from job parameters (used and set in
+        galaxy.tools.actions). Old jobs may have not set these in the job parameters
+        before persisting them.
+        """
         input_params = job.raw_param_dict()
         input_ext = input_params.get("__input_ext")
         input_dbkey = input_params.get("dbkey")
@@ -1978,6 +1981,7 @@ class JobWrapper(HasResourceParameters):
             job=job,
             tool_working_directory=tool_working_directory,
             inp_data=inp_data,
+            inp_collections=inp_collections,
             input_ext=input_ext,
             input_dbkey=input_dbkey,
             final_job_state=final_job_state,
@@ -2195,7 +2199,7 @@ class JobWrapper(HasResourceParameters):
             safe_makedirs(os.path.join(self.working_directory, "metadata"))
             self.app.datatypes_registry.to_xml_file(path=datatypes_config)
 
-        inp_data, out_data, out_collections = job.io_dicts(exclude_implicit_outputs=True)
+        _, _, out_data, out_collections = job.io_dicts(exclude_implicit_outputs=True)
         job_metadata = os.path.join(self.tool_working_directory, self.tool.provided_metadata_file)
         object_store_conf = self.object_store.to_dict()
         command = self.external_output_metadata.setup_external_metadata(

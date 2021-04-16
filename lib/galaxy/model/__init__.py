@@ -1103,7 +1103,7 @@ class Job(Base, JobLike, UsesCreateAndUpdateTime, Dictifiable, Serializable):
                 # else this is a mapped over output
         out_collections.update([(obj.name, obj.dataset_collection) for obj in self.output_dataset_collections])
         log.error(f"io_dicts out_collections {out_collections}")
-        return inp_data, out_data, out_collections
+        return inp_data, inp_collections, out_data, out_collections
 
     # TODO: Add accessors for members defined in SQL Alchemy for the Job table and
     # for the mapper defined to the Job table.
