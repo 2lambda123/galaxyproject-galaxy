@@ -95,7 +95,6 @@ class PermissionProvider(AbstractPermissionProvider):
 
 
 class MetadataSourceProvider(AbstractMetadataSourceProvider):
-
     def __init__(self, inp_data, inp_collections):
         if inp_data:
             self._inp_data = inp_data
@@ -107,9 +106,9 @@ class MetadataSourceProvider(AbstractMetadataSourceProvider):
             self._inp_collections = []
 
     def get_metadata_source(self, input_name):
-        log.error(f"MetadataSourceProvider.get_metadata_source self._inp_data {self._inp_data}")
-        log.error(f"MetadataSourceProvider.get_metadata_source self._inp_collections {self._inp_collections}")
-        log.error(f"MetadataSourceProvider.get_metadata_source input_name {input_name}")
+        # log.error(f"MetadataSourceProvider.get_metadata_source self._inp_data {self._inp_data}")
+        # log.error(f"MetadataSourceProvider.get_metadata_source self._inp_collections {self._inp_collections}")
+        # log.error(f"MetadataSourceProvider.get_metadata_source input_name {input_name}")
         if input_name in self._inp_data:
             return self._inp_data[input_name]
         elif input_name in self._inp_collections:
@@ -118,7 +117,9 @@ class MetadataSourceProvider(AbstractMetadataSourceProvider):
             for element in self._inp_collections[input_name].dataset_instances:
                 extensions.add(element.extension)
             if len(extensions) != 1:
-                log.error("cannot determine metadata source for {input_name}: collection contains datasets with different data types")
+                log.error(
+                    "cannot determine metadata source for {input_name}: collection contains datasets with different data types"
+                )
                 raise KeyError
             return self._inp_collections[input_name].dataset_instances[0]
         else:
@@ -126,8 +127,8 @@ class MetadataSourceProvider(AbstractMetadataSourceProvider):
 
 
 def evaluate_source(source, output_collection_def, metadata_source_provider):
-    log.error(f"evaluate_format_source output_collection_def {output_collection_def}")
-    log.error(f"evaluate_format_source metadata_source_provider {metadata_source_provider}")
+    # log.error(f"evaluate_format_source output_collection_def {output_collection_def}")
+    # log.error(f"evaluate_format_source metadata_source_provider {metadata_source_provider}")
 
     source_name = getattr(output_collection_def, source)
     if source_name is None:
@@ -166,7 +167,7 @@ def collect_dynamic_outputs(
     job_context,
     output_collections,
 ):
-    log.error("collect_dynamic_outputs")
+    # log.error("collect_dynamic_outputs")
     # unmapped outputs do not correspond to explicit outputs of the tool, they were inferred entirely
     # from the tool provided metadata (e.g. galaxy.json).
     for unnamed_output_dict in job_context.tool_provided_metadata.get_unnamed_outputs():
@@ -211,8 +212,8 @@ def collect_dynamic_outputs(
             persist_hdas(elements, job_context, final_job_state=job_context.final_job_state)
 
     for name, has_collection in output_collections.items():
-        log.error(f"collect_dynamic_outputs name {name}")
-        log.error(f"collect_dynamic_outputs has_collection {has_collection}")
+        # log.error(f"collect_dynamic_outputs name {name}")
+        # log.error(f"collect_dynamic_outputs has_collection {has_collection}")
         output_collection_def = job_context.output_collection_def(name)
         log.error(f"collect_dynamic_outputs output_collection_def {output_collection_def}")
         if not output_collection_def:
@@ -222,7 +223,7 @@ def collect_dynamic_outputs(
             continue
 
         default_ext = evaluate_source("format_source", output_collection_def, job_context.metadata_source_provider)
-        log.error(f"collect_dynamic_outputs default_ext {default_ext}")
+        # log.error(f"collect_dynamic_outputs default_ext {default_ext}")
 
         # Could be HDCA for normal jobs or a DC for mapping
         # jobs.

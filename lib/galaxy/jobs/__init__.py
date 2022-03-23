@@ -1842,8 +1842,8 @@ class JobWrapper(HasResourceParameters):
 
         output_dataset_associations = job.output_datasets + job.output_library_datasets
         inp_data, inp_collections, out_data, out_collections = job.io_dicts()
-        log.error(f"inp_data {inp_data}")
-        log.error(f"inp_collections {inp_collections}")
+        # log.error(f"inp_data {inp_data}")
+        # log.error(f"inp_collections {inp_collections}")
 
         if not extended_metadata:
             # importing metadata will discover outputs if extended metadata
@@ -1863,7 +1863,9 @@ class JobWrapper(HasResourceParameters):
                 if not final_job_state == job.states.ERROR:
                     dataset_assoc.dataset.dataset.state = model.Dataset.states.OK
             try:
-                self.discover_outputs(job, inp_data, inp_collections, out_data, out_collections, final_job_state=final_job_state)
+                self.discover_outputs(
+                    job, inp_data, inp_collections, out_data, out_collections, final_job_state=final_job_state
+                )
             except MaxDiscoveredFilesExceededError as e:
                 final_job_state = job.states.ERROR
                 job.job_messages = [str(e)]
