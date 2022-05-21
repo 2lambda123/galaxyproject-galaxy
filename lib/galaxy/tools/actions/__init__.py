@@ -1148,6 +1148,7 @@ def determine_output_format(
                 pass
         ext = random_input_ext
     format_source = output.format_source
+
     if format_source is not None and format_source in input_datasets:
         try:
             input_dataset = input_datasets[output.format_source]

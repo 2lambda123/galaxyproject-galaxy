@@ -96,11 +96,41 @@ class PermissionProvider(AbstractPermissionProvider):
 
 
 class MetadataSourceProvider(AbstractMetadataSourceProvider):
-    def __init__(self, inp_data):
-        self._inp_data = inp_data
+    def __init__(self, inp_data, inp_collections):
+        if inp_data:
+            self._inp_data = inp_data
+        else:
+            self._inp_data = []
+        if inp_collections:
+            self._inp_collections = inp_collections
+        else:
+            self._inp_collections = []
 
     def get_metadata_source(self, input_name):
-        return self._inp_data[input_name]
+        if input_name in self._inp_data:
+            return self._inp_data[input_name]
+        elif input_name in self._inp_collections:
+            # TODO maybe skip this test for performance
+            extensions = set()
+            for element in self._inp_collections[input_name].dataset_instances:
+                extensions.add(element.extension)
+            if len(extensions) != 1:
+                log.error(
+                    "cannot determine metadata source for {input_name}: collection contains datasets with different data types"
+                )
+                raise KeyError
+            return self._inp_collections[input_name].dataset_instances[0]
+        else:
+            raise KeyError
+
+
+def evaluate_source(source, output_collection_def, metadata_source_provider):
+
+    source_name = getattr(output_collection_def, source)
+    if source_name is None:
+        return None
+    source = metadata_source_provider.get_metadata_source(source_name)
+    return source.ext
 
 
 def collect_dynamic_outputs(
@@ -151,11 +181,14 @@ def collect_dynamic_outputs(
 
     for name, has_collection in output_collections.items():
         output_collection_def = job_context.output_collection_def(name)
+        log.error(f"collect_dynamic_outputs output_collection_def {output_collection_def}")
         if not output_collection_def:
             continue
 
         if not output_collection_def.dynamic_structure:
             continue
+
+        default_ext = evaluate_source("format_source", output_collection_def, job_context.metadata_source_provider)
 
         # Could be HDCA for normal jobs or a DC for mapping
         # jobs.
@@ -180,6 +213,7 @@ def collect_dynamic_outputs(
                 filenames,
                 name=output_collection_def.name,
                 metadata_source_name=output_collection_def.metadata_source,
+                default_format=default_ext,
                 final_job_state=job_context.final_job_state,
             )
             collection_builder.populate()
@@ -648,7 +682,7 @@ class DatasetCollector:
     def __init__(self, dataset_collection_description):
         self.discover_via = dataset_collection_description.discover_via
         # dataset_collection_description is an abstract description
-        # built from the tool parsing module - see galaxy.tool_util.parser.output_colleciton_def
+        # built from the tool parsing module - see galaxy.tool_util.parser.output_collection_def
         self.sort_key = dataset_collection_description.sort_key
         self.sort_reverse = dataset_collection_description.sort_reverse
         self.sort_comp = dataset_collection_description.sort_comp

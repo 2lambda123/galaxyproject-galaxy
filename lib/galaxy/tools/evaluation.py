@@ -126,7 +126,7 @@ class ToolEvaluator:
         visit_input_values(self.tool.inputs, incoming, validate_inputs)
 
         # Restore input / output data lists
-        inp_data, out_data, out_collections = job.io_dicts()
+        inp_data, inp_collections, out_data, out_collections = job.io_dicts()
 
         if get_special:
             special = get_special()
