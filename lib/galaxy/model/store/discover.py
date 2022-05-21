@@ -81,7 +81,6 @@ class ModelPersistenceContext(metaclass=abc.ABCMeta):
         creating_job_id=None,
         storage_callbacks=None,
     ):
-        # log.error(f"create_dataset default_format {default_format}")
         tag_list = tag_list or []
         sources = sources or []
         hashes = hashes or []
@@ -273,12 +272,6 @@ class ModelPersistenceContext(metaclass=abc.ABCMeta):
         #    <sort by="reverse_lexical" />
         #    <sort regex="example.(\d+).fastq" by="1:numerical" />
         #    <sort regex="part_(\d+)_sample_([^_]+).fastq" by="2:lexical,1:numerical" />
-        # log.error(f"populate_collection_elements collection {collection}")
-        # log.error(f"populate_collection_elements root_collection_builder {root_collection_builder}")
-        # log.error(f"populate_collection_elements filenames {filenames}")
-        # log.error(f"populate_collection_elements name {name}")
-        # log.error(f"populate_collection_elements default_format {default_format}")
-        # log.error(f"populate_collection_elements metadata_source_name {metadata_source_name}")
 
         if name is None:
             name = "unnamed output"
