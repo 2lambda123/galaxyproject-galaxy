@@ -664,6 +664,60 @@
 :Type: str
 
 
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+``short_term_storage_dir``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:Description:
+    Location of files available for a short time as downloads (short
+    term storage). This directory is exclusively used for serving
+    dynamically generated downloadable content. Galaxy may uses the
+    new_file_path parameter as a general temporary directory and that
+    directory should be monitored by a tool such as tmpwatch in
+    production environments. short_term_storage_dir on the other hand
+    is monitored by Galaxy's task framework and should not require
+    such external tooling.
+    The value of this option will be resolved with respect to
+    <cache_dir>.
+:Default: ``short_term_web_storage``
+:Type: str
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``short_term_storage_default_duration``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:Description:
+    Default duration before short term web storage files will be
+    cleaned up by Galaxy tasks (in seconds). The default duration is 1
+    day.
+:Default: ``86400``
+:Type: int
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``short_term_storage_maximum_duration``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:Description:
+    The maximum duration short term storage files can hosted before
+    they will be marked for clean up.  The default setting of 0
+    indicates no limit here.
+:Default: ``0``
+:Type: int
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``short_term_storage_cleanup_interval``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:Description:
+    How many seconds between instances of short term storage being
+    cleaned up in default Celery task configuration.
+:Default: ``3600``
+:Type: int
+
+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ``file_sources_config_file``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -674,6 +728,16 @@
     <config_dir>.
 :Default: ``file_sources_conf.yml``
 :Type: str
+
+
+~~~~~~~~~~~~~~~~
+``file_sources``
+~~~~~~~~~~~~~~~~
+
+:Description:
+    FileSource plugins described embedded into Galaxy's config.
+:Default: ``None``
+:Type: seq
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -960,22 +1024,6 @@
     dir.  To use an absolute path begin the path with '/'.  This is a
     comma-separated list.
 :Default: ``config/plugins/visualizations``
-:Type: str
-
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-``interactive_environment_plugins_directory``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-:Description:
-    Interactive environment plugins root directory: where to look for
-    interactive environment plugins.  By default none will be loaded.
-    Set to config/plugins/interactive_environments to load Galaxy's
-    stock plugins. These will require Docker to be configured and have
-    security considerations, so proceed with caution. The path is
-    relative to the Galaxy root dir.  To use an absolute path begin
-    the path with '/'.  This is a comma-separated list.
-:Default: ``None``
 :Type: str
 
 
@@ -1290,6 +1338,17 @@
     <cache_dir>.
 :Default: ``mulled/locks``
 :Type: str
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``mulled_resolution_cache_expire``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:Description:
+    Seconds until the beaker cache is considered old and a new value
+    is created.
+:Default: ``3600``
+:Type: int
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1883,6 +1942,18 @@
     <config_dir>.
 :Default: ``trs_servers_conf.yml``
 :Type: str
+
+
+~~~~~~~~~~~~~~~~~~~~~~
+``use_legacy_history``
+~~~~~~~~~~~~~~~~~~~~~~
+
+:Description:
+    Server-wide default selection to use the legacy history during the
+    transition period, after which this option will disappear.  Users
+    will remain able to swap back and forth per their preference.
+:Default: ``false``
+:Type: bool
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3272,6 +3343,17 @@
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~
+``prefer_custos_login``
+~~~~~~~~~~~~~~~~~~~~~~~
+
+:Description:
+    Controls the order of the login page to prefer Custos-based login
+    and registration.
+:Default: ``false``
+:Type: bool
+
+
+~~~~~~~~~~~~~~~~~~~~~~~
 ``allow_user_creation``
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -3425,16 +3507,6 @@
     erasure.
     Please read the GDPR section under the special topics area of the
     admin documentation.
-:Default: ``false``
-:Type: bool
-
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-``enable_beta_containers_interface``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-:Description:
-    Enable the new container interface for Interactive Environments
 :Default: ``false``
 :Type: bool
 
@@ -3736,8 +3808,13 @@
 :Description:
     When the simplified workflow run form is rendered, should the
     invocation outputs be sent to the 'current' history or a 'new'
-    history.
-:Default: ``current``
+    history. If the user should be presented and option between these
+    - set this to 'prefer_current' or 'prefer_new' to display a
+    runtime setting with the corresponding default. The default is to
+    provide the user this option and default it to the current history
+    (the traditional behavior of Galaxy for years) - this corresponds
+    to the setting 'prefer_current'.
+:Default: ``prefer_current``
 :Type: str
 
 
@@ -4606,7 +4683,7 @@
     the process that handled that particular request will tell all
     others to also reload, lock jobs, etc. For connection examples,
     see
-    http://docs.celeryproject.org/projects/kombu/en/latest/userguide/connections.html
+    https://docs.celeryq.dev/projects/kombu/en/stable/userguide/connections.html
     Without specifying anything here, galaxy will first attempt to use
     your specified database_connection above.  If that's not specified
     either, Galaxy will automatically create and use a separate sqlite
@@ -4626,6 +4703,26 @@
     see https://docs.galaxyproject.org/en/master/admin/production.html
 :Default: ``false``
 :Type: bool
+
+
+~~~~~~~~~~~~~~~~~
+``celery_broker``
+~~~~~~~~~~~~~~~~~
+
+:Description:
+    Celery broker (if unset falls back to amqp_internal_connection).
+:Default: ``None``
+:Type: str
+
+
+~~~~~~~~~~~~~~~~~~
+``celery_backend``
+~~~~~~~~~~~~~~~~~~
+
+:Description:
+    If set, it will be the results backend for Celery.
+:Default: ``None``
+:Type: str
 
 
 ~~~~~~~~~~~~~~
@@ -4744,20 +4841,6 @@
     The value of this option will be resolved with respect to
     <config_dir>.
 :Default: ``error_report.yml``
-:Type: str
-
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-``containers_config_file``
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-:Description:
-    Path to container interface configuration file. The containers
-    interface is only used if `enable_beta_containers_interface`
-    config option is set.
-    The value of this option will be resolved with respect to
-    <config_dir>.
-:Default: ``containers_conf.yml``
 :Type: str
 
 

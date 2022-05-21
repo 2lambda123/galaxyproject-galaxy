@@ -53,7 +53,8 @@ from galaxy import (
     model,
 )
 from galaxy.model import tool_shed_install
-from galaxy.schema import FilterQueryParams
+from galaxy.schema import ValueFilterQueryParams
+from galaxy.schema.fields import DecodedDatabaseIdField
 from galaxy.security.idencoding import IdEncodingHelper
 from galaxy.structured_app import (
     BasicSharedApp,
@@ -141,7 +142,10 @@ def get_class(class_name):
 def decode_id(app: BasicSharedApp, id: Any):
     # note: use str - occasionally a fully numeric id will be placed in post body and parsed as int via JSON
     #   resulting in error for valid id
-    return decode_with_security(app.security, id)
+    if isinstance(id, DecodedDatabaseIdField):
+        return int(id)
+    else:
+        return decode_with_security(app.security, id)
 
 
 def decode_with_security(security: IdEncodingHelper, id: Any):
@@ -1028,7 +1032,7 @@ class ModelFilterParser(HasAModelManager):
 
     def build_filter_params(
         self,
-        query_params: FilterQueryParams,
+        query_params: ValueFilterQueryParams,
         filter_attr_key: str = "q",
         filter_value_key: str = "qv",
         attr_op_split_char: str = "-",
@@ -1064,8 +1068,8 @@ class ModelFilterParser(HasAModelManager):
         #   (instead of relying on zip to shorten)
         return list(zip(attrs, ops, values))
 
-    def parse_query_filters(self, query_filters: FilterQueryParams):
-        """Convenience function to parse a FilterQueryParams object into a collection of filtering criteria."""
+    def parse_query_filters(self, query_filters: ValueFilterQueryParams):
+        """Convenience function to parse a ValueFilterQueryParams object into a collection of filtering criteria."""
         filter_params = self.build_filter_params(query_filters)
         return self.parse_filters(filter_params)
 
@@ -1246,15 +1250,19 @@ class ModelFilterParser(HasAModelManager):
             return date_string
         raise ValueError("datetime strings must be in the ISO 8601 format and in the UTC")
 
+    def contains_non_orm_filter(self, filters: List[ParsedFilter]) -> bool:
+        """Whether the list of filters contains any non-orm filter."""
+        return any(filter.filter_type == "function" for filter in filters)
+
 
 def parse_bool(bool_string: Union[str, bool]) -> bool:
     """
     Parse a boolean from a string.
     """
     # Be strict here to remove complexity of options (but allow already parsed).
-    if bool_string in ("True", True):
+    if bool_string in ("True", "true", True):
         return True
-    if bool_string in ("False", False):
+    if bool_string in ("False", "false", False):
         return False
     raise ValueError(f"invalid boolean: {bool_string}")
 

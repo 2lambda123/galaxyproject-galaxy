@@ -25,7 +25,6 @@ from galaxy.managers import (
     users,
 )
 from galaxy.structured_app import MinimalManagerApp
-from galaxy.util.checkers import check_binary
 
 log = logging.getLogger(__name__)
 
@@ -237,7 +236,9 @@ class DatasetSerializer(base.ModelSerializer[DatasetManager], deletable.Purgable
 
 
 # ============================================================================= AKA DatasetInstanceManager
-class DatasetAssociationManager(base.ModelManager, secured.AccessibleManagerMixin, deletable.PurgableManagerMixin):
+class DatasetAssociationManager(
+    base.ModelManager, secured.AccessibleManagerMixin, secured.OwnableManagerMixin, deletable.PurgableManagerMixin
+):
     """
     DatasetAssociation/DatasetInstances are intended to be working
     proxies to a Dataset, associated with either a library or a
@@ -378,8 +379,7 @@ class DatasetAssociationManager(base.ModelManager, secured.AccessibleManagerMixi
                 )
             else:
                 path = data.dataset.file_name
-                is_binary = check_binary(path)
-                datatype = sniff.guess_ext(path, trans.app.datatypes_registry.sniff_order, is_binary=is_binary)
+                datatype = sniff.guess_ext(path, trans.app.datatypes_registry.sniff_order)
                 trans.app.datatypes_registry.change_datatype(data, datatype)
                 trans.sa_session.flush()
                 self.set_metadata(trans, dataset_assoc)
