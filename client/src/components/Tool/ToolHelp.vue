@@ -1,9 +1,8 @@
 <template>
-    <div class="form-help form-text mt-4" v-html="formattedContent" />
+    <div v-html="formatContent" class="form-help form-text mt-4"></div>
 </template>
 
 <script>
-import $ from "jquery";
 import { getAppRoot } from "onload/loadConfig";
 
 export default {
@@ -14,16 +13,23 @@ export default {
         },
     },
     computed: {
-        formattedContent() {
-            const $tmpl = $("<div/>").append(this.content);
-            $tmpl.find("a").attr("target", "_blank");
-            $tmpl.find("img").each(function () {
-                const img_src = $(this).attr("src");
-                if (img_src.indexOf("admin_toolshed") !== -1) {
-                    $(this).attr("src", getAppRoot() + img_src);
-                }
-            });
-            return $tmpl.html();
+        formatContent() {
+            const temp = document.createElement("div");
+            temp.id = "formattedContent";
+            temp.insertAdjacentHTML("beforeend", this.content);
+            const anchorElements = temp.getElementsByTagName("a");
+            anchorElements.length > 0 ? anchorElements.forEach((elem) => elem.setAttribute("target", "_blank")) : null;
+            const imageElements = temp.getElementsByTagName("img");
+            imageElements.length > 0
+                ? imageElements.forEach((elem) => {
+                      const imgSrc = elem.getAttribute("src");
+                      if (elem.src.indexOf("admin_toolshed") !== -1) {
+                          elem.setAttribute("src", getAppRoot() + imgSrc);
+                      }
+                  })
+                : null;
+
+            return temp.innerHTML;
         },
     },
 };
