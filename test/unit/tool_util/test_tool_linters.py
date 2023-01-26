@@ -278,7 +278,7 @@ INPUTS_SELECT_DUPLICATED_OPTIONS = """
 </tool>
 """
 
-SELECT_DUPLICATED_OPTIONS_WITH_DIFF_SELECTED = """
+INPUTS_SELECT_DUPLICATED_OPTIONS_WITH_DIFF_SELECTED = """
 <tool>
     <inputs>
         <param name="select" type="select" optional="true" multiple="true">
@@ -449,6 +449,201 @@ INPUTS_DUPLICATE_NAMES = """
 </tool>
 """
 
+# tests for many different cheetah placeholder syntax possibilities
+# that should pass and two that should give an error
+INPUTS_USED_PARAMETER_IN_COMMAND = """
+<tool>
+    <command>
+        $simple1
+        ${ simple2 }
+        ## Variable in repeat
+        #for i, r in enumerate($repeat_name)
+            #set x = $str(r[ 'var_in_repeat' ])
+            ${r.var_in_repeat2}
+        #end for
+        "${ ",".join( [ str( r.var_in_repeat3 ) for r in $repeat_name ] ) }"
+        $sec.paired_collection1.forward.ext
+        $sec["paired_collection3"].forward.ext
+        $sec.sec2.paired_collection2['reverse'].ext
+
+        $getVar("getvar")
+        $getVar("getvar_default", "default")
+        $hasVar("hasvar")
+        $varExists("varexists")
+
+        ## check that comments are considered
+        ## $hey_a_missing_parameter
+        also comments at the end of lines are ignored ## $hey_a_missing_parameter
+        #*
+            $hey_a_missing_parameter
+        *#
+        #* $hey_a_missing_parameter *#
+        $same_param_in_both_whens
+    </command>
+    <configfiles>
+        <configfile name="conf"><![CDATA[
+            <tag>$param_in_config_file</tag>
+        ]]></configfile>
+    </configfiles>
+    <inputs>
+        <param name="simple1" type="text"/>
+        <param name="simple2" type="text"/>
+        <repeat name="repeat_name" title="repeat title">
+            <param name="var_in_repeat" type="text"/>
+            <param name="var_in_repeat2" type="text"/>
+            <param name="var_in_repeat3" type="text"/>
+        </repeat>
+        <section name="sec">
+            <param name="paired_collection1" type="collection" collection_type="paired"/>
+            <param name="paired_collection3" type="collection" collection_type="paired"/>
+            <section name="sec2">
+                <param name="paired_collection2" type="collection" collection_type="paired"/>
+            </section>
+        </section>
+        <param name="getvar" type="text"/>
+        <param name="getvar_default" type="text"/>
+        <param name="hasvar" type="text"/>
+        <param name="varexists" type="text"/>
+        <param name="param_in_config_file" type="text"/>
+        <param name="data_param_filter" type="boolean"/>
+        <param name="collection_param_filter" type="boolean"/>
+        <conditional name="cond">
+            <param name="cond_select" type="select" label="cond_select_label">
+                <option value="a">a</option>
+                <option value="b">b</option>
+            </param>
+            <when value="a">
+                <param name="same_param_in_both_whens" type="text"/>
+            </when>
+            <when value="b">
+                <param name="same_param_in_both_whens" type="text"/>
+            </when>
+        </conditional>
+        <param name="change_format_parameter" type="text"/>
+        <param name="hey_a_missing_parameter" type="boolean"/>
+    </inputs>
+    <outputs>
+        <data label="${param_that_is_used_only_in_output_label}">
+            <filter>data_param_filter</filter>
+            <actions>
+                <conditional name="action_conditional_reference">
+                    <when value="x">
+                        <action type="metadata" name="dbkey">
+                            <option type="from_param" name="action_option_reference">
+                               <filter type="param_value" ref="action_filter_reference" column="0"/>
+                            </option>
+                        </action>
+                    </when>
+                </conditional>
+            </actions>
+        </data>
+        <collection>
+            <filter>collection_param_filter</filter>
+        </collection>
+        <data format="fasta">
+            <change_format>
+                <when input="change_format_parameter" value="interval" format="interval" />
+            </change_format>
+        </data>
+    </outputs>
+</tool>
+"""
+
+INPUTS_USED_PARAMETER_IN_COMMAND_WITH_INPUTS = """
+<tool>
+    <command>
+        do something with $inputs ## but note, the linter does not check if inputs is really used
+    </command>
+    <configfiles>
+        <inputs name="inputs" />
+    </configfiles>
+    <inputs>
+        <param name="param_that_may_be_in_inputs_configfile" type="text"/>
+        <param name="param_that_is_not_in_inputs_configfile" type="data" format="data"/>
+    </inputs>
+</tool>
+"""
+
+INPUTS_USED_OTHER = """
+<tool>
+    <macros>
+        <template name="template_token">
+            $variable_in_template_token
+        </template>
+    </macros>
+    <command>
+        #include source=$template_token#
+    </command>
+    <configfiles>
+        <configfile name="conf"><![CDATA[
+            <tag>$param_in_config_file</tag>
+        ]]></configfile>
+    </configfiles>
+    <inputs>
+        <param name="variable_in_template_token" type="text"/>
+        <!-- parameter that is used in the label of an output-->
+        <param name="param_that_is_used_only_in_output_label" type="text"/>
+        <!-- parameters that are used only in output actions -->
+        <param name="action_conditional_reference" type="text"/>
+        <param name="action_option_reference" type="text"/>
+        <param name="action_filter_reference" type="text"/>
+    </inputs>
+    <outputs>
+        <data label="${param_that_is_used_only_in_output_label}">
+            <filter>data_param_filter</filter>
+            <actions>
+                <conditional name="action_conditional_reference">
+                    <when value="x">
+                        <action type="metadata" name="dbkey">
+                            <option type="from_param" name="action_option_reference">
+                               <filter type="param_value" ref="action_filter_reference" column="0"/>
+                            </option>
+                        </action>
+                    </when>
+                </conditional>
+            </actions>
+        </data>
+    </outputs>
+</tool>
+"""
+
+INPUTS_USED_PARAMETER_IN_COMMAND_WITH_INPUTS2 = """
+<tool>
+    <command>
+        do nothing with the configfile
+    </command>
+    <configfiles>
+        <inputs filename="inputs" />
+    </configfiles>
+    <inputs>
+        <param name="param_that_is_not_in_inputs_configfile" type="text"/>
+    </inputs>
+</tool>
+"""
+
+# test case checking if syntax errors are reported
+INPUTS_USED_PARAMETER_SYNTAX_ERROR = """
+<tool>
+    <command>
+        #if $param
+            this is unfinished if</command>
+    <inputs>
+        <param name="param" type="boolean"/>
+    </inputs>
+</tool>
+"""
+
+# tool xml for repeats linter
+REPEATS = """
+<tool>
+    <inputs>
+        <repeat>
+            <param name="another_param_name" type="data" format="bed"/>
+        </repeat>
+    </inputs>
+</tool>
+"""
+
 # test tool xml for outputs linter
 OUTPUTS_MISSING = """
 <tool/>
@@ -469,8 +664,8 @@ OUTPUTS_UNKNOWN_TAG = """
 OUTPUTS_UNNAMED_INVALID_NAME = """
 <tool>
     <outputs>
-        <data label="data out"/>
-        <collection name="2output" label="coll out"/>
+        <data/>
+        <collection name="2output"/>
     </outputs>
 </tool>
 """
@@ -533,17 +728,6 @@ OUTPUTS_DUPLICATED_NAME_LABEL = """
 </tool>
 """
 
-# tool xml for repeats linter
-REPEATS = """
-<tool>
-    <inputs>
-        <repeat>
-            <param name="another_param_name" type="data" format="bed"/>
-        </repeat>
-    </inputs>
-</tool>
-"""
-
 # tool xml for stdio linter
 STDIO_DEFAULT_FOR_DEFAULT_PROFILE = """
 <tool>
@@ -587,15 +771,6 @@ TESTS_ABSENT = """
 TESTS_ABSENT_DATA_SOURCE = """
 <tool tool_type="data_source"/>
 """
-TESTS_WO_EXPECTATIONS = """
-<tool>
-    <tests>
-        <test>
-        </test>
-    </tests>
-</tool>
-"""
-
 TESTS_PARAM_OUTPUT_NAMES = """
 <tool>
     <inputs>
@@ -641,6 +816,27 @@ TESTS_EXPECT_FAILURE_OUTPUT = """
 </tool>
 """
 
+TESTS_WO_EXPECTATIONS = """
+<tool>
+    <tests>
+        <test>
+        </test>
+    </tests>
+</tool>
+"""
+
+TESTS_VALID = """
+<tool>
+    <outputs>
+        <data name="test"/>
+    </outputs>
+    <tests>
+        <test>
+            <output name="test"/>
+        </test>
+    </tests>
+</tool>
+"""
 ASSERTS = """
 <tool>
     <outputs>
@@ -674,18 +870,6 @@ ASSERTS = """
                     <has_n_lines/>
                 </assert_contents>
             </output>
-        </test>
-    </tests>
-</tool>
-"""
-TESTS_VALID = """
-<tool>
-    <outputs>
-        <data name="test"/>
-    </outputs>
-    <tests>
-        <test>
-            <output name="test"/>
         </test>
     </tests>
 </tool>
@@ -1159,7 +1343,7 @@ def test_inputs_duplicated_options(lint_ctx):
 
 
 def test_inputs_duplicated_options_with_different_select(lint_ctx):
-    tool_source = get_xml_tool_source(SELECT_DUPLICATED_OPTIONS_WITH_DIFF_SELECTED)
+    tool_source = get_xml_tool_source(INPUTS_SELECT_DUPLICATED_OPTIONS_WITH_DIFF_SELECTED)
     run_lint(lint_ctx, inputs.lint_inputs, tool_source)
     assert not lint_ctx.warn_messages
     assert not lint_ctx.error_messages
@@ -1311,6 +1495,95 @@ def test_inputs_duplicate_names(lint_ctx):
     assert len(lint_ctx.error_messages) == 2
 
 
+def test_inputs_used_parameter_in_command(lint_ctx):
+    tool_source = get_xml_tool_source(INPUTS_USED_PARAMETER_IN_COMMAND)
+    run_lint(lint_ctx, inputs.lint_inputs_used, tool_source)
+    assert not lint_ctx.info_messages
+    assert not lint_ctx.valid_messages
+    assert not lint_ctx.warn_messages
+    assert "Param input [hey_a_missing_parameter] not found in command or configfiles." in lint_ctx.error_messages
+    assert "Param input [change_format_parameter] is only used in a change_format tag" in lint_ctx.error_messages
+    assert len(lint_ctx.error_messages) == 2
+
+
+def test_inputs_used_other(lint_ctx):
+    tool_source = get_xml_tool_source(INPUTS_USED_OTHER)
+    run_lint(lint_ctx, inputs.lint_inputs_used, tool_source)
+    assert not lint_ctx.info_messages
+    assert not lint_ctx.valid_messages
+    assert (
+        "Param input [variable_in_template_token] only used in a template macro, use a macro token instead."
+        in lint_ctx.warn_messages
+    )
+    assert (
+        "Param input [action_option_reference] only found in output actions, better use extended metadata."
+        in lint_ctx.warn_messages
+    )
+    assert (
+        "Param input [action_filter_reference] only found in output actions, better use extended metadata."
+        in lint_ctx.warn_messages
+    )
+    assert (
+        "Param input [action_conditional_reference] only found in output actions, better use extended metadata."
+        in lint_ctx.warn_messages
+    )
+    assert (
+        "Param input [param_that_is_used_only_in_output_label] only found in a label attribute, this is discouraged."
+        in lint_ctx.warn_messages
+    )
+    assert len(lint_ctx.warn_messages) == 5
+    assert len(lint_ctx.error_messages) == 0
+
+
+def test_inputs_used_parameter_in_command_with_inputs(lint_ctx):
+    tool_source = get_xml_tool_source(INPUTS_USED_PARAMETER_IN_COMMAND_WITH_INPUTS)
+    run_lint(lint_ctx, inputs.lint_inputs_used, tool_source)
+    assert not lint_ctx.info_messages
+    assert not lint_ctx.valid_messages
+    assert not lint_ctx.warn_messages
+    assert (
+        "Param input [param_that_is_not_in_inputs_configfile] not found in command or configfiles. Does the present inputs config miss the 'data_style' attribute?"
+        in lint_ctx.error_messages
+    )
+    assert len(lint_ctx.error_messages) == 1
+
+
+def test_inputs_used_parameter_in_command_with_inputs2(lint_ctx):
+    tool_source = get_xml_tool_source(INPUTS_USED_PARAMETER_IN_COMMAND_WITH_INPUTS2)
+    run_lint(lint_ctx, inputs.lint_inputs_used, tool_source)
+    assert not lint_ctx.info_messages
+    assert not lint_ctx.valid_messages
+    assert not lint_ctx.warn_messages
+    assert (
+        "Param input [param_that_is_not_in_inputs_configfile] only used inputs configfile inputs, but this is not used in the command"
+        in lint_ctx.error_messages
+    )
+    assert len(lint_ctx.error_messages) == 1
+
+
+def test_inputs_used_parameter_syntax_error(lint_ctx):
+    tool_source = get_xml_tool_source(INPUTS_USED_PARAMETER_SYNTAX_ERROR)
+    run_lint(lint_ctx, inputs.lint_inputs_used, tool_source)
+    assert not lint_ctx.info_messages
+    assert not lint_ctx.valid_messages
+    assert not lint_ctx.warn_messages
+    assert (
+        """Invalid cheetah found
+
+Some #directives are missing their corresponding #end ___ tag: if
+Line 4, column 33
+
+Line|Cheetah Code
+----|-------------------------------------------------------------
+2   |
+3   |        #if $param
+4   |            this is unfinished if
+                                     ^
+"""
+        in lint_ctx.error_messages
+    )
+
+
 def test_inputs_repeats(lint_ctx):
     tool_source = get_xml_tool_source(REPEATS)
     run_lint(lint_ctx, inputs.lint_repeats, tool_source)
@@ -1363,10 +1636,11 @@ def test_outputs_unnamed_invalid_name(lint_ctx):
     assert "Tool output name [2output] is not a valid Cheetah placeholder." in lint_ctx.warn_messages
     assert "Collection output with undefined 'type' found." in lint_ctx.warn_messages
     assert "Tool collection output 2output doesn't define an output format." in lint_ctx.warn_messages
+    assert "Tool output [2output] uses duplicated label '${tool.name} on ${on_string}'" in lint_ctx.error_messages
     assert len(lint_ctx.info_messages) == 1
     assert not lint_ctx.valid_messages
     assert len(lint_ctx.warn_messages) == 5
-    assert not lint_ctx.error_messages
+    assert len(lint_ctx.error_messages) == 1
 
 
 def test_outputs_format_input(lint_ctx):
