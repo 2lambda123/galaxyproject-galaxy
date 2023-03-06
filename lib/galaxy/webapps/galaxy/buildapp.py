@@ -251,6 +251,7 @@ def app_pair(global_conf, load_app_kwds=None, wsgi_preflight=True, **kwargs):
     webapp.add_client_route("/datasets/{dataset_id}/details")
     webapp.add_client_route("/datasets/{dataset_id}/preview")
     webapp.add_client_route("/datasets/{dataset_id}/show_params")
+    webapp.add_client_route("/display_applications/{path:.*?}")
     webapp.add_client_route("/collection/{collection_id}/edit")
     webapp.add_client_route("/jobs/submission/success")
     webapp.add_client_route("/jobs/{job_id}/view")
@@ -775,6 +776,14 @@ def populate_api_routes(webapp, app):
         "/api/display_applications",
         controller="display_applications",
         action="index",
+        conditions=dict(method=["GET"]),
+    )
+
+    webapp.mapper.connect(
+        "create_link",
+        "/api/display_applications/create_link",
+        controller="display_applications",
+        action="create_link",
         conditions=dict(method=["GET"]),
     )
 
