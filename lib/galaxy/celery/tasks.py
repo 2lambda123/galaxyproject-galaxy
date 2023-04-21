@@ -397,7 +397,7 @@ def cleanup_short_term_storage(storage_monitor: ShortTermStorageMonitor):
 
 
 @galaxy_task(action="clean up job working directories")
-def cleanup_jwds(sa_session: galaxy_scoped_session, object_store: BaseObjectStore):
+def cleanup_jwds(sa_session: galaxy_scoped_session, object_store: BaseObjectStore, days: Optional[int] = 5):
     """Cleanup job working directories for failed jobs that are older than X days"""
 
     def get_failed_jobs():
@@ -417,9 +417,7 @@ def cleanup_jwds(sa_session: galaxy_scoped_session, object_store: BaseObjectStor
             pass
         except OSError as e:
             log.error(f"Error deleting job working directory: {jwd_path} : {e.strerror}")
-
-    # days should be converted to a config option
-    days = 5
+    
     failed_jobs = get_failed_jobs()
 
     if not failed_jobs:
