@@ -53,6 +53,10 @@
                             </a>
                         </b>
                     </p>
+                    <h4 class="mb-3 h-md">What might have happened?</h4>
+                    <b-card>
+                        <GalaxyWizard view="error" :query="jobDetails.tool_stderr" context="tool_error" />
+                    </b-card>
                     <h4 class="mb-3 h-md">Issue Report</h4>
                     <b-alert
                         v-for="(resultMessage, index) in resultMessages"
@@ -89,6 +93,7 @@ import { mapState } from "pinia";
 import { useUserStore } from "@/stores/userStore";
 import DatasetErrorDetails from "./DatasetErrorDetails";
 import FormElement from "components/Form/FormElement";
+import GalaxyWizard from "components/GalaxyWizard";
 import { DatasetProvider } from "components/providers";
 import { JobDetailsProvider, JobProblemProvider } from "components/providers/JobProvider";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
@@ -104,6 +109,7 @@ export default {
         DatasetErrorDetails,
         FontAwesomeIcon,
         FormElement,
+        GalaxyWizard,
         JobDetailsProvider,
         JobProblemProvider,
     },
