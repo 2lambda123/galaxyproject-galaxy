@@ -170,7 +170,7 @@ export default {
             messageText: "",
             useCachedJobs: false,
             useEmail: false,
-            useJobRemapping: false,
+            useJobRemapping: true,
             entryPoints: [],
             jobDef: {},
             jobResponse: {},
