@@ -6,7 +6,10 @@ Executable directly using: python -m test.unit.managers.test_UserManager
 from datetime import datetime
 from unittest.mock import patch
 
-from sqlalchemy import desc
+from sqlalchemy import (
+    desc,
+    select,
+)
 
 from galaxy import (
     exceptions,
@@ -47,7 +50,7 @@ class TestUserManager(BaseTestCase):
         user3 = self.user_manager.create(**user3_data)
 
         self.log("should be able to query")
-        users = self.trans.sa_session.query(model.User).all()
+        users = self.trans.sa_session.scalars(select(model.User)).all()
         assert self.user_manager.list() == users
 
         assert self.user_manager.by_id(user2.id) == user2
@@ -195,7 +198,6 @@ class TestUserManager(BaseTestCase):
     def test_activation_email(self):
         self.log("should produce the activation email")
         self.user_manager.create(email="user@nopassword.com", username="nopassword")
-        self.trans.request.host = "request.host"
 
         def validate_send_email(frm, to, subject, body, config, html=None):
             assert frm == "email_from"
@@ -219,7 +221,6 @@ class TestUserManager(BaseTestCase):
     def test_reset_email(self):
         self.log("should produce the password reset email")
         self.user_manager.create(email="user@nopassword.com", username="nopassword")
-        self.trans.request.host = "request.host"
 
         def validate_send_email(frm, to, subject, body, config, html=None):
             assert frm == "email_from"

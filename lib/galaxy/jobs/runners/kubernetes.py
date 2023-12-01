@@ -252,9 +252,8 @@ class KubernetesJobRunner(AsynchronousJobRunner):
                     return int(self.runner_params["k8s_run_as_user_id"])
                 except Exception:
                     log.warning(
-                        'User ID passed for Kubernetes runner needs to be an integer or "$uid", value '
-                        + self.runner_params["k8s_run_as_user_id"]
-                        + " passed is invalid"
+                        'User ID passed for Kubernetes runner needs to be an integer or "$uid", value %s passed is invalid',
+                        self.runner_params["k8s_run_as_user_id"],
                     )
                     return None
         return None
@@ -269,9 +268,8 @@ class KubernetesJobRunner(AsynchronousJobRunner):
                     return int(self.runner_params["k8s_run_as_group_id"])
                 except Exception:
                     log.warning(
-                        'Group ID passed for Kubernetes runner needs to be an integer or "$gid", value '
-                        + self.runner_params["k8s_run_as_group_id"]
-                        + " passed is invalid"
+                        'Group ID passed for Kubernetes runner needs to be an integer or "$gid", value %s passed is invalid',
+                        self.runner_params["k8s_run_as_group_id"],
                     )
         return None
 
@@ -284,9 +282,8 @@ class KubernetesJobRunner(AsynchronousJobRunner):
                 return int(self.runner_params["k8s_supplemental_group_id"])
             except Exception:
                 log.warning(
-                    'Supplemental group passed for Kubernetes runner needs to be an integer or "$gid", value '
-                    + self.runner_params["k8s_supplemental_group_id"]
-                    + " passed is invalid"
+                    'Supplemental group passed for Kubernetes runner needs to be an integer or "$gid", value %s passed is invalid',
+                    self.runner_params["k8s_supplemental_group_id"],
                 )
                 return None
         return None
@@ -297,9 +294,8 @@ class KubernetesJobRunner(AsynchronousJobRunner):
                 return int(self.runner_params["k8s_fs_group_id"])
             except Exception:
                 log.warning(
-                    'FS group passed for Kubernetes runner needs to be an integer or "$gid", value '
-                    + self.runner_params["k8s_fs_group_id"]
-                    + " passed is invalid"
+                    'FS group passed for Kubernetes runner needs to be an integer or "$gid", value %s passed is invalid',
+                    self.runner_params["k8s_fs_group_id"],
                 )
                 return None
         return None
@@ -531,8 +527,7 @@ class KubernetesJobRunner(AsynchronousJobRunner):
             "volumeMounts": deduplicate_entries(mounts),
         }
 
-        resources = self.__get_resources(ajs.job_wrapper)
-        if resources:
+        if resources := self.__get_resources(ajs.job_wrapper):
             envs = []
             cpu_val = None
             if "requests" in resources:
@@ -589,23 +584,17 @@ class KubernetesJobRunner(AsynchronousJobRunner):
         return [k8s_container]
 
     def __get_resources(self, job_wrapper):
-        mem_request = self.__get_memory_request(job_wrapper)
-        cpu_request = self.__get_cpu_request(job_wrapper)
-
-        mem_limit = self.__get_memory_limit(job_wrapper)
-        cpu_limit = self.__get_cpu_limit(job_wrapper)
-
         requests = {}
         limits = {}
 
-        if mem_request:
+        if mem_request := self.__get_memory_request(job_wrapper):
             requests["memory"] = mem_request
-        if cpu_request:
+        if cpu_request := self.__get_cpu_request(job_wrapper):
             requests["cpu"] = cpu_request
 
-        if mem_limit:
+        if mem_limit := self.__get_memory_limit(job_wrapper):
             limits["memory"] = mem_limit
-        if cpu_limit:
+        if cpu_limit := self.__get_cpu_limit(job_wrapper):
             limits["cpu"] = cpu_limit
 
         resources = {}

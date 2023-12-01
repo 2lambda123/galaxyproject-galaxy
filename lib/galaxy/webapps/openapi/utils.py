@@ -150,9 +150,8 @@ def get_openapi_operation_request_body(
     body_schema, _, _ = field_schema(body_field, model_name_map=model_name_map, ref_prefix=REF_PREFIX)
     field_info = cast(Body, body_field.field_info)
     request_media_type = field_info.media_type
-    required = body_field.required
     request_body_oai: Dict[str, Any] = {}
-    if required:
+    if required := body_field.required:
         request_body_oai["required"] = required
     request_media_content: Dict[str, Any] = {"schema": body_schema}
     if field_info.examples:
@@ -195,7 +194,7 @@ def get_openapi_operation_metadata(*, route: routing.APIRoute, method: str, oper
         file_name = getattr(route.endpoint, "__globals__", {}).get("__file__")
         if file_name:
             message += f" at {file_name}"
-        warnings.warn(message)
+        warnings.warn(message)  # noqa: B028
     operation_ids.add(operation_id)
     operation["operationId"] = operation_id
     if route.deprecated:
@@ -460,7 +459,7 @@ def merge_operation_id(operation_id_by_id: Dict[str, Optional[str]]) -> Optional
         if update_operation_id and operation_id != update_operation_id:
             if operation_id:
                 message = f"Merging operation with id {operation_id} with operation with id {update_operation_id}."
-                warnings.warn(message)
+                warnings.warn(message)  # noqa: B028
                 operation_id = f"{operation_id}+{update_operation_id}"
             else:
                 operation_id = update_operation_id

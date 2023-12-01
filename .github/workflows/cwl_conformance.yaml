@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.7']
+        python-version: ['3.8']
         marker: ['green', 'red and required', 'red and not required']
         conformance-version: ['cwl_conformance_v1_0'] #, 'cwl_conformance_v1_1', 'cwl_conformance_v1_2']
     services:
@@ -38,6 +38,11 @@ jobs:
       - uses: actions/checkout@v3
         with:
           path: 'galaxy root'
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18.12.1'
+          cache: 'yarn'
+          cache-dependency-path: 'galaxy root/client/yarn.lock'
       - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}

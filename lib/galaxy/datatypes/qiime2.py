@@ -34,7 +34,7 @@ class _QIIME2ResultBase(CompressedZipArchive):
     MetadataElement(name="version", readonly=True)
 
     def set_meta(self, dataset: DatasetProtocol, overwrite: bool = True, **kwd) -> None:
-        metadata = _get_metadata_from_archive(dataset.file_name)
+        metadata = _get_metadata_from_archive(dataset.get_file_name())
         for key, value in metadata.items():
             if value:
                 setattr(dataset.metadata, key, value)
@@ -50,11 +50,11 @@ class _QIIME2ResultBase(CompressedZipArchive):
         dataset.peek = "\n".join(map(": ".join, self._peek(dataset)))
 
     def display_peek(self, dataset: DatasetProtocol) -> str:
-        def make_row(item):
-            return "<tr><th>%s</th><td>%s</td></td>" % tuple(html.escape(x) for x in item)
+        def make_row(pair):
+            return f"<tr><th>{pair[0]}</th><td>{html.escape(pair[1])}</td></tr>"
 
         table = ['<table cellspacing="0" cellpadding="2">']
-        table += list(map(make_row, self._peek(dataset, simple=True)))
+        table += [make_row(pair) for pair in self._peek(dataset, simple=True)]
         table += ["</table>"]
 
         return "".join(table)
@@ -123,7 +123,7 @@ class QIIME2Metadata(Tabular):
         super().set_meta(dataset, overwrite=overwrite, **kwd)
 
         if dataset.has_data():
-            with open(dataset.file_name) as dataset_fh:
+            with open(dataset.get_file_name()) as dataset_fh:
                 line = None
                 for line, _ in zip(dataset_fh, range(self._search_lines)):
                     if line.startswith(self._TYPES_DIRECTIVE):

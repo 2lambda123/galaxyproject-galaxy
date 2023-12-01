@@ -23,7 +23,11 @@ from galaxy.managers.context import (
     ProvidesUserContext,
 )
 from galaxy.managers.histories import HistoryManager
-from galaxy.model import PostJobAction
+from galaxy.model import (
+    LibraryDatasetDatasetAssociation,
+    PostJobAction,
+)
+from galaxy.model.base import transaction
 from galaxy.schema.fetch_data import (
     FetchDataFormPayload,
     FetchDataPayload,
@@ -67,7 +71,7 @@ class ToolsService(ServiceBase):
                 with tempfile.NamedTemporaryFile(
                     dir=trans.app.config.new_file_path, prefix="upload_file_data_", delete=False
                 ) as dest:
-                    shutil.copyfileobj(upload_file.file, dest)
+                    shutil.copyfileobj(upload_file.file, dest)  # type: ignore[misc]  # https://github.com/python/mypy/issues/15031
                 upload_file.file.close()
                 files_payload[f"files_{i}|file_data"] = FilesPayload(
                     filename=upload_file.filename, local_filename=dest.name
@@ -130,10 +134,9 @@ class ToolsService(ServiceBase):
         # Set running history from payload parameters.
         # History not set correctly as part of this API call for
         # dataset upload.
-        history_id = payload.get("history_id")
-        if history_id:
+        if history_id := payload.get("history_id"):
             history_id = trans.security.decode_id(history_id) if isinstance(history_id, str) else history_id
-            target_history = self.history_manager.get_owned(history_id, trans.user, current_history=trans.history)
+            target_history = self.history_manager.get_mutable(history_id, trans.user, current_history=trans.history)
         else:
             target_history = None
 
@@ -187,7 +190,8 @@ class ToolsService(ServiceBase):
                     new_pja_flush = True
 
         if new_pja_flush:
-            trans.sa_session.flush()
+            with transaction(trans.sa_session):
+                trans.sa_session.commit()
 
         return self._handle_inputs_output_to_api_response(trans, tool, target_history, vars)
 
@@ -196,8 +200,7 @@ class ToolsService(ServiceBase):
         output_datasets = vars.get("out_data", [])
         rval: Dict[str, Any] = {"outputs": [], "output_collections": [], "jobs": [], "implicit_collections": []}
         rval["produces_entry_points"] = tool.produces_entry_points
-        job_errors = vars.get("job_errors", [])
-        if job_errors:
+        if job_errors := vars.get("job_errors", []):
             # If we are here - some jobs were successfully executed but some failed.
             rval["errors"] = job_errors
 
@@ -275,7 +278,7 @@ class ToolsService(ServiceBase):
 
     def _patch_library_dataset(self, trans: ProvidesHistoryContext, v, target_history):
         if isinstance(v, dict) and "id" in v and v.get("src") == "ldda":
-            ldda = trans.sa_session.query(trans.app.model.LibraryDatasetDatasetAssociation).get(self.decode_id(v["id"]))
+            ldda = trans.sa_session.get(LibraryDatasetDatasetAssociation, self.decode_id(v["id"]))
             if trans.user_is_admin or trans.app.security_agent.can_access_dataset(
                 trans.get_current_user_roles(), ldda.dataset
             ):

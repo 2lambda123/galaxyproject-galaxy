@@ -54,8 +54,15 @@ from galaxy import (
     model,
 )
 from galaxy.model import tool_shed_install
+from galaxy.model.base import transaction
 from galaxy.schema import ValueFilterQueryParams
 from galaxy.schema.fields import DecodedDatabaseIdField
+from galaxy.schema.storage_cleaner import (
+    CleanableItemsSummary,
+    StorageItemsCleanupResult,
+    StoredItem,
+    StoredItemOrderBy,
+)
 from galaxy.security.idencoding import IdEncodingHelper
 from galaxy.structured_app import (
     BasicSharedApp,
@@ -187,24 +194,6 @@ def get_object(trans, id, class_name, check_ownership=False, check_accessible=Fa
 
 
 # =============================================================================
-def munge_lists(listA, listB):
-    """
-    Combine two lists into a single list.
-
-    (While allowing them to be None, non-lists, or lists.)
-    """
-    # TODO: there's nothing specifically filter or model-related here - move to util
-    if listA is None:
-        return listB
-    if listB is None:
-        return listA
-    if not isinstance(listA, list):
-        listA = [listA]
-    if not isinstance(listB, list):
-        listB = [listB]
-    return listA + listB
-
-
 U = TypeVar("U", bound=model._HasTable)
 
 
@@ -232,7 +221,9 @@ class ModelManager(Generic[U]):
 
         self.session().add(item)
         if flush:
-            self.session().flush()
+            session = self.session()
+            with transaction(session):
+                session.commit()
         return item
 
     # .... query foundation wrapper
@@ -278,14 +269,6 @@ class ModelManager(Generic[U]):
         for filter in filters:
             query = query.filter(filter)
         return query
-
-    def _munge_filters(self, filtersA, filtersB):
-        """
-        Combine two lists into a single list.
-
-        (While allowing them to be None, non-lists, or lists.)
-        """
-        return munge_lists(filtersA, filtersB)
 
     # .... order, limit, and offset
     def _apply_order_by(self, query: Query, order_by) -> Query:
@@ -340,17 +323,6 @@ class ModelManager(Generic[U]):
         except sqlalchemy.orm.exc.MultipleResultsFound:
             raise exceptions.InconsistentDatabase(f"found more than one {self.model_class.__name__}")
 
-    def _one_or_none(self, query):
-        """
-        Return the object if found, None if it's not.
-
-        :raises exceptions.InconsistentDatabase: if more than one model is found
-        """
-        try:
-            return self._one_with_recast_errors(query)
-        except exceptions.ObjectNotFound:
-            return None
-
     # NOTE: at this layer, all ids are expected to be decoded and in int form
     def by_id(self, id: int) -> Query:
         """
@@ -365,9 +337,10 @@ class ModelManager(Generic[U]):
         Returns all objects matching the given filters
         """
         # list becomes a way of applying both filters generated in the orm (such as .user ==)
-        # and functional filters that aren't currently possible using the orm (such as instance calcluated values
+        # and functional filters that aren't currently possible using the orm (such as instance calculated values
         # or annotations/tags). List splits those two filters and applies limits/offsets
         # only after functional filters (if any) using python.
+        self._handle_filters_case_sensitivity(filters)
         orm_filters, fn_filters = self._split_filters(filters)
         if not fn_filters:
             # if no fn_filtering required, we can use the 'all orm' version with limit offset
@@ -380,6 +353,33 @@ class ModelManager(Generic[U]):
         # apply limit, offset after SQL filtering
         items = self._apply_fn_filters_gen(items, fn_filters)
         return list(self._apply_fn_limit_offset_gen(items, limit, offset))
+
+    def count(self, filters=None, **kwargs):
+        """
+        Returns the number of objects matching the given filters.
+
+        If the filters include functional filters, this function will raise an exception as they might cause
+        performance issues.
+        """
+        self._handle_filters_case_sensitivity(filters)
+        orm_filters, fn_filters = self._split_filters(filters)
+        if fn_filters:
+            raise exceptions.RequestParameterInvalidException("Counting with functional filters is not supported.")
+
+        query = self.query(filters=orm_filters, **kwargs)
+        return query.count()
+
+    def _handle_filters_case_sensitivity(self, filters):
+        """Modifies the filters to make them case insensitive if needed."""
+        if filters is None:
+            return  # No filters to handle
+        iterable_filters = filters if isinstance(filters, list) else [filters]
+        for item in iterable_filters:
+            # If the filter has the case_insensitive attribute set to True this means that the filter
+            # is a parsed orm filter and that it needs to compare the column with a lower case version of the value.
+            is_case_insensitive = getattr(item, "case_insensitive", False)
+            if is_case_insensitive and isinstance(item.filter, sqlalchemy.sql.elements.BinaryExpression):
+                item.filter.left = sqlalchemy.func.lower(item.filter.left)
 
     def _split_filters(self, filters):
         """
@@ -450,7 +450,7 @@ class ModelManager(Generic[U]):
         if not ids:
             return []
         ids_filter = parsed_filter("orm", self.model_class.__table__.c.id.in_(ids))
-        found = self.list(filters=self._munge_filters(ids_filter, filters), **kwargs)
+        found = self.list(filters=combine_lists(ids_filter, filters), **kwargs)
         # TODO: this does not order by the original 'ids' array
 
         # ...could use get (supposedly since found are in the session, the db won't be hit twice)
@@ -490,7 +490,9 @@ class ModelManager(Generic[U]):
         item = self.model_class(*args, **kwargs)
         self.session().add(item)
         if flush:
-            self.session().flush()
+            session = self.session()
+            with transaction(session):
+                session.commit()
         return item
 
     def copy(self, item, **kwargs):
@@ -510,7 +512,9 @@ class ModelManager(Generic[U]):
             if hasattr(item, key):
                 setattr(item, key, value)
         if flush:
-            self.session().flush()
+            session = self.session()
+            with transaction(session):
+                session.commit()
         return item
 
     def associate(self, associate_with, item, foreign_key_name=None):
@@ -921,7 +925,8 @@ class ModelDeserializer(HasAModelManager[T]):
         # TODO:?? add and flush here or in manager?
         if flush and len(new_dict):
             sa_session.add(item)
-            sa_session.flush()
+            with transaction(sa_session):
+                sa_session.commit()
 
         return new_dict
 
@@ -1134,8 +1139,7 @@ class ModelFilterParser(HasAModelManager):
         if not filter_fn:
             return None
         # parse the val from string using the 'val' parser if present (otherwise, leave as string)
-        val_parser = attr_map.get("val", None)
-        if val_parser:
+        if val_parser := attr_map.get("val", None):
             val = val_parser(val)
 
         # curry/partial and fold the val in there now
@@ -1257,8 +1261,7 @@ class ModelFilterParser(HasAModelManager):
         except ValueError:
             pass
 
-        match = self.date_string_re.match(date_string)
-        if match:
+        if match := self.date_string_re.match(date_string):
             date_string = " ".join(group for group in match.groups() if group)
             return date_string
         raise ValueError("datetime strings must be in the ISO 8601 format and in the UTC")
@@ -1298,3 +1301,73 @@ class SortableManager:
         """Return an ORM compatible order_by clause using the given string (i.e.: 'name-dsc,create_time').
         This must be implemented by the manager."""
         raise NotImplementedError
+
+
+class StorageCleanerManager(Protocol):
+    """
+    Interface for monitoring storage usage and managing deletion/purging of objects that consume user's storage space.
+    """
+
+    # TODO: refactor this interface to be more generic and allow for more types of cleanable items
+
+    sort_map: Dict[StoredItemOrderBy, Any]
+
+    def get_discarded_summary(self, user: model.User) -> CleanableItemsSummary:
+        """Returns information with the total storage space taken by discarded items for the given user.
+
+        Discarded items are those that are deleted but not purged yet.
+        """
+        raise NotImplementedError
+
+    def get_discarded(
+        self,
+        user: model.User,
+        offset: Optional[int],
+        limit: Optional[int],
+        order: Optional[StoredItemOrderBy],
+    ) -> List[StoredItem]:
+        """Returns a paginated list of items deleted by the given user that are not yet purged."""
+        raise NotImplementedError
+
+    def get_archived_summary(self, user: model.User) -> CleanableItemsSummary:
+        """Returns information with the total storage space taken by archived items for the given user.
+
+        Archived items are those that are not currently active. Some archived items may be purged already, but
+        this method does not return information about those.
+        """
+        raise NotImplementedError
+
+    def get_archived(
+        self,
+        user: model.User,
+        offset: Optional[int],
+        limit: Optional[int],
+        order: Optional[StoredItemOrderBy],
+    ) -> List[StoredItem]:
+        """Returns a paginated list of items archived by the given user that are not yet purged."""
+        raise NotImplementedError
+
+    def cleanup_items(self, user: model.User, item_ids: Set[int]) -> StorageItemsCleanupResult:
+        """Purges the given list of items by ID. The items must be owned by the user."""
+        raise NotImplementedError
+
+
+def combine_lists(listA: Any, listB: Any) -> List:
+    """
+    Combine two lists into a single list.
+
+    Arguments can be None, non-lists, or lists. If an argument is None, it will
+    not be included in the returned list. If both arguments are None, an empty
+    list will be returned.
+    """
+
+    def make_list(item):
+        # Check for None explicitly: __bool__ may be overwritten.
+        if item is None:
+            return []
+        elif isinstance(item, list):
+            return item
+        else:
+            return [item]
+
+    return make_list(listA) + make_list(listB)

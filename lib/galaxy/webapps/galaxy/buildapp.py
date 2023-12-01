@@ -56,7 +56,7 @@ def app_pair(global_conf, load_app_kwds=None, wsgi_preflight=True, **kwargs):
         galaxy.app.app = app
     else:
         try:
-            app = galaxy.app.UniverseApplication(global_conf=global_conf, **kwargs)
+            app = galaxy.app.UniverseApplication(global_conf=global_conf, is_webapp=True, **kwargs)
             galaxy.app.app = app
         except Exception:
             traceback.print_exc()
@@ -194,6 +194,7 @@ def app_pair(global_conf, load_app_kwds=None, wsgi_preflight=True, **kwargs):
     webapp.add_client_route("/admin/invocations")
     webapp.add_client_route("/admin/toolbox_dependencies")
     webapp.add_client_route("/admin/data_manager{path_info:.*}")
+    webapp.add_client_route("/admin/notifications{path_info:.*}")
     webapp.add_client_route("/admin/error_stack")
     webapp.add_client_route("/admin/users")
     webapp.add_client_route("/admin/users/create")
@@ -201,6 +202,7 @@ def app_pair(global_conf, load_app_kwds=None, wsgi_preflight=True, **kwargs):
     webapp.add_client_route("/admin/reset_metadata")
     webapp.add_client_route("/admin/roles")
     webapp.add_client_route("/admin/forms")
+    webapp.add_client_route("/admin/notifications")
     webapp.add_client_route("/admin/groups")
     webapp.add_client_route("/admin/repositories")
     webapp.add_client_route("/admin/sanitize_allow")
@@ -209,14 +211,15 @@ def app_pair(global_conf, load_app_kwds=None, wsgi_preflight=True, **kwargs):
     webapp.add_client_route("/admin/quotas")
     webapp.add_client_route("/admin/form/{form_id}")
     webapp.add_client_route("/admin/api_keys")
+    webapp.add_client_route("/carbon_emissions_calculations")
     webapp.add_client_route("/datatypes")
     webapp.add_client_route("/login/start")
-    webapp.add_client_route("/login/confirm")
     webapp.add_client_route("/tools/list")
     webapp.add_client_route("/tools/json")
     webapp.add_client_route("/tours")
     webapp.add_client_route("/tours/{tour_id}")
     webapp.add_client_route("/user")
+    webapp.add_client_route("/user/notifications{path:.*?}")
     webapp.add_client_route("/user/{form_id}")
     webapp.add_client_route("/welcome/new")
     webapp.add_client_route("/visualizations")
@@ -238,6 +241,9 @@ def app_pair(global_conf, load_app_kwds=None, wsgi_preflight=True, **kwargs):
     webapp.add_client_route("/histories/list")
     webapp.add_client_route("/histories/import")
     webapp.add_client_route("/histories/{history_id}/export")
+    webapp.add_client_route("/histories/{history_id}/archive")
+    webapp.add_client_route("/histories/{history_id}/invocations")
+    webapp.add_client_route("/histories/archived")
     webapp.add_client_route("/histories/list_published")
     webapp.add_client_route("/histories/list_shared")
     webapp.add_client_route("/histories/rename")
@@ -302,29 +308,6 @@ def postfork_setup():
 def populate_api_routes(webapp, app):
     webapp.add_api_controllers("galaxy.webapps.galaxy.api", app)
 
-    _add_item_tags_controller(
-        webapp, name_prefix="history_content_", path_prefix="/api/histories/{history_id}/contents/{history_content_id}"
-    )
-    webapp.mapper.connect(
-        "cloud_storage", "/api/cloud/storage/", controller="cloud", action="index", conditions=dict(method=["GET"])
-    )
-    webapp.mapper.connect(
-        "cloud_storage_get",
-        "/api/cloud/storage/get",
-        controller="cloud",
-        action="get",
-        conditions=dict(method=["POST"]),
-    )
-    webapp.mapper.connect(
-        "cloud_storage_send",
-        "/api/cloud/storage/send",
-        controller="cloud",
-        action="send",
-        conditions=dict(method=["POST"]),
-    )
-
-    _add_item_tags_controller(webapp, name_prefix="history_", path_prefix="/api/histories/{history_id}")
-    _add_item_tags_controller(webapp, name_prefix="workflow_", path_prefix="/api/workflows/{workflow_id}")
     _add_item_annotation_controller(
         webapp, name_prefix="history_content_", path_prefix="/api/histories/{history_id}/contents/{history_content_id}"
     )
@@ -351,7 +334,6 @@ def populate_api_routes(webapp, app):
         controller="page_revisions",
         parent_resources=dict(member_name="page", collection_name="pages"),
     )
-    webapp.mapper.resource("group", "groups", path_prefix="/api")
 
     webapp.mapper.connect("/api/cloud/authz/", action="index", controller="cloudauthz", conditions=dict(method=["GET"]))
     webapp.mapper.connect(
@@ -377,6 +359,11 @@ def populate_api_routes(webapp, app):
     # =======================
     # ====== TOOLS API ======
     # =======================
+
+    webapp.mapper.connect("/api/tool_panels", action="panel_views", controller="tools", conditions=dict(method=["GET"]))
+    webapp.mapper.connect(
+        "/api/tool_panels/{view}", action="panel_view", controller="tools", conditions=dict(method=["GET"])
+    )
 
     webapp.mapper.connect("/api/tools/all_requirements", action="all_requirements", controller="tools")
     webapp.mapper.connect("/api/tools/error_stack", action="error_stack", controller="tools")
@@ -583,7 +570,6 @@ def populate_api_routes(webapp, app):
         conditions=dict(method=["POST"]),
     )
 
-    webapp.mapper.resource_with_deleted("user", "users", path_prefix="/api")
     webapp.mapper.resource("visualization", "visualizations", path_prefix="/api")
     webapp.mapper.resource("plugins", "plugins", path_prefix="/api")
     webapp.mapper.connect("/api/workflows/build_module", action="build_module", controller="workflows")
@@ -594,8 +580,6 @@ def populate_api_routes(webapp, app):
         "/api/workflows/{id}/refactor", action="refactor", controller="workflows", conditions=dict(method=["PUT"])
     )
     webapp.mapper.resource("workflow", "workflows", path_prefix="/api")
-
-    webapp.mapper.resource("search", "search", path_prefix="/api")
 
     # ---- visualizations registry ---- generic template renderer
     # @deprecated: this route should be considered deprecated
@@ -766,26 +750,6 @@ def populate_api_routes(webapp, app):
         "update_step", "/steps/{step_id}", action="update_invocation_step", conditions=dict(method=["PUT"])
     )
 
-    # ======================================
-    # ====== DISPLAY APPLICATIONS API ======
-    # ======================================
-
-    webapp.mapper.connect(
-        "index",
-        "/api/display_applications",
-        controller="display_applications",
-        action="index",
-        conditions=dict(method=["GET"]),
-    )
-
-    webapp.mapper.connect(
-        "reload",
-        "/api/display_applications/reload",
-        controller="display_applications",
-        action="reload",
-        conditions=dict(method=["POST"]),
-    )
-
     # ================================
     # ===== USERS API =====
     # ================================
@@ -851,54 +815,6 @@ def populate_api_routes(webapp, app):
         "/api/users/{id}/toolbox_filters/inputs",
         controller="users",
         action="set_toolbox_filters",
-        conditions=dict(method=["PUT"]),
-    )
-
-    webapp.mapper.connect(
-        "get_custom_builds",
-        "/api/users/{id}/custom_builds",
-        controller="users",
-        action="get_custom_builds",
-        conditions=dict(method=["GET"]),
-    )
-
-    webapp.mapper.connect(
-        "add_custom_builds",
-        "/api/users/{id}/custom_builds/{key}",
-        controller="users",
-        action="add_custom_builds",
-        conditions=dict(method=["PUT"]),
-    )
-
-    webapp.mapper.connect(
-        "delete_custom_builds",
-        "/api/users/{id}/custom_builds/{key}",
-        controller="users",
-        action="delete_custom_builds",
-        conditions=dict(method=["DELETE"]),
-    )
-
-    webapp.mapper.connect(
-        "set_favorite_tool",
-        "/api/users/{id}/favorites/{object_type}",
-        controller="users",
-        action="set_favorite",
-        conditions=dict(method=["PUT"]),
-    )
-
-    webapp.mapper.connect(
-        "remove_favorite_tool",
-        "/api/users/{id}/favorites/{object_type}/{object_id:.*?}",
-        controller="users",
-        action="remove_favorite",
-        conditions=dict(method=["DELETE"]),
-    )
-
-    webapp.mapper.connect(
-        "set_theme",
-        "/api/users/{id}/theme/{theme}",
-        controller="users",
-        action="set_theme",
         conditions=dict(method=["PUT"]),
     )
 
@@ -999,70 +915,11 @@ def populate_api_routes(webapp, app):
         webapp, name_prefix="library_dataset_", path_prefix="/api/libraries/{library_id}/contents/{library_content_id}"
     )
 
-    webapp.mapper.resource("job", "jobs", path_prefix="/api")
-    webapp.mapper.connect(
-        "job_search", "/api/jobs/search", controller="jobs", action="search", conditions=dict(method=["POST"])
-    )
-    webapp.mapper.connect(
-        "job_inputs", "/api/jobs/{id}/inputs", controller="jobs", action="inputs", conditions=dict(method=["GET"])
-    )
-    webapp.mapper.connect(
-        "job_outputs", "/api/jobs/{id}/outputs", controller="jobs", action="outputs", conditions=dict(method=["GET"])
-    )
     webapp.mapper.connect(
         "build_for_rerun",
         "/api/jobs/{id}/build_for_rerun",
         controller="jobs",
         action="build_for_rerun",
-        conditions=dict(method=["GET"]),
-    )
-    webapp.mapper.connect(
-        "resume", "/api/jobs/{id}/resume", controller="jobs", action="resume", conditions=dict(method=["PUT"])
-    )
-    webapp.mapper.connect(
-        "job_error", "/api/jobs/{id}/error", controller="jobs", action="error", conditions=dict(method=["POST"])
-    )
-    webapp.mapper.connect(
-        "common_problems",
-        "/api/jobs/{id}/common_problems",
-        controller="jobs",
-        action="common_problems",
-        conditions=dict(method=["GET"]),
-    )
-    # Job metrics and parameters by job id or dataset id (for slightly different accessibility checking)
-    webapp.mapper.connect(
-        "destination_params",
-        "/api/jobs/{job_id}/destination_params",
-        controller="jobs",
-        action="destination_params",
-        conditions=dict(method=["GET"]),
-    )
-    webapp.mapper.connect(
-        "metrics",
-        "/api/jobs/{job_id}/metrics",
-        controller="jobs",
-        action="metrics",
-        conditions=dict(method=["GET"]),
-    )
-    webapp.mapper.connect(
-        "dataset_metrics",
-        "/api/datasets/{dataset_id}/metrics",
-        controller="jobs",
-        action="metrics",
-        conditions=dict(method=["GET"]),
-    )
-    webapp.mapper.connect(
-        "parameters_display",
-        "/api/jobs/{job_id}/parameters_display",
-        controller="jobs",
-        action="parameters_display",
-        conditions=dict(method=["GET"]),
-    )
-    webapp.mapper.connect(
-        "dataset_parameters_display",
-        "/api/datasets/{dataset_id}/parameters_display",
-        controller="jobs",
-        action="parameters_display",
         conditions=dict(method=["GET"]),
     )
 
@@ -1075,6 +932,15 @@ def populate_api_routes(webapp, app):
         path_prefix="/api/jobs/{job_id}",
         parent_resources=dict(member_name="job", collection_name="jobs"),
     )
+
+    webapp.mapper.connect(
+        "index",
+        "/api/jobs/{job_id}/files",
+        controller="job_files",
+        action="index",
+        conditions=dict(method=["HEAD"]),
+    )
+
     webapp.mapper.resource(
         "port",
         "ports",
@@ -1184,48 +1050,6 @@ def populate_api_routes(webapp, app):
         webapp.trace_logger = app.trace_logger
 
 
-def _add_item_tags_controller(webapp, name_prefix, path_prefix, **kwd):
-    # Not just using map.resources because actions should be based on name not id
-    controller = f"{name_prefix}tags"
-    name = f"{name_prefix}tag"
-    path = f"{path_prefix}/tags"
-    map = webapp.mapper
-    # Allow view items' tags.
-    map.connect(name, path, controller=controller, action="index", conditions=dict(method=["GET"]))
-    # Allow remove tag from item
-    map.connect(
-        f"{name}_delete",
-        "%s/tags/{tag_name}" % path_prefix,
-        controller=controller,
-        action="delete",
-        conditions=dict(method=["DELETE"]),
-    )
-    # Allow create a new tag with from name
-    map.connect(
-        f"{name}_create",
-        "%s/tags/{tag_name}" % path_prefix,
-        controller=controller,
-        action="create",
-        conditions=dict(method=["POST"]),
-    )
-    # Allow update tag value
-    map.connect(
-        f"{name}_update",
-        "%s/tags/{tag_name}" % path_prefix,
-        controller=controller,
-        action="update",
-        conditions=dict(method=["PUT"]),
-    )
-    # Allow show tag by name
-    map.connect(
-        f"{name}_show",
-        "%s/tags/{tag_name}" % path_prefix,
-        controller=controller,
-        action="show",
-        conditions=dict(method=["GET"]),
-    )
-
-
 def _add_item_extended_metadata_controller(webapp, name_prefix, path_prefix, **kwd):
     controller = f"{name_prefix}extended_metadata"
     name = f"{name_prefix}extended_metadata"
@@ -1260,8 +1084,7 @@ def wrap_in_middleware(app, global_conf, application_stack, **local_conf):
     # other middleware):
     app = wrap_if_allowed(app, stack, httpexceptions.make_middleware, name="paste.httpexceptions", args=(conf,))
     # Statsd request timing and profiling
-    statsd_host = conf.get("statsd_host", None)
-    if statsd_host:
+    if statsd_host := conf.get("statsd_host", None):
         from galaxy.web.framework.middleware.statsd import StatsdMiddleware
 
         app = wrap_if_allowed(
@@ -1299,12 +1122,6 @@ def wrap_in_middleware(app, global_conf, application_stack, **local_conf):
                 normalize_remote_user_email=conf.get("normalize_remote_user_email", False),
             ),
         )
-    # The recursive middleware allows for including requests in other
-    # requests or forwarding of requests, all on the server side.
-    if asbool(conf.get("use_recursive", True)):
-        from paste import recursive
-
-        app = wrap_if_allowed(app, stack, recursive.RecursiveMiddleware, args=(conf,))
 
     # Error middleware
     app = wrap_if_allowed(app, stack, ErrorMiddleware, args=(conf,))

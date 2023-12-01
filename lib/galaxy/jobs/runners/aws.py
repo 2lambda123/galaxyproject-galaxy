@@ -78,8 +78,7 @@ def _add_resource_requirements(destination_params):
         {"type": "VCPU", "value": str(destination_params.get("vcpu"))},
         {"type": "MEMORY", "value": str(destination_params.get("memory"))},
     ]
-    n_gpu = destination_params.get("gpu")
-    if n_gpu:
+    if n_gpu := destination_params.get("gpu"):
         rval.append({"type": "GPU", "value": str(n_gpu)})
     return rval
 
@@ -279,8 +278,7 @@ class AWSBatchJobRunner(AsynchronousJobRunner):
         if destination_params.get("platform") == 'Fargate':   # Fargate doesn't support host volumes
             return volumes, mount_points
 
-        ec2_host_volumes = destination_params.get("ec2_host_volumes")
-        if ec2_host_volumes:
+        if (ec2_host_volumes := destination_params.get("ec2_host_volumes")):
             for ix, vol in enumerate(ec2_host_volumes.split(",")):
                 vol = vol.strip()
                 vol_name = "host_vol_" + str(ix)
@@ -356,8 +354,7 @@ class AWSBatchJobRunner(AsynchronousJobRunner):
                 }
             )
         other_kwargs = {}
-        retry_strategy = self._get_retry_strategy(destination_params)
-        if retry_strategy:
+        if (retry_strategy := self._get_retry_strategy(destination_params)):
             other_kwargs["retryStrategy"] = retry_strategy
 
         res = self._batch_client.register_job_definition(
@@ -597,6 +594,7 @@ class AWSBatchJobRunner(AsynchronousJobRunner):
             "exit_code_path": exit_code_path,
             "working_directory": job_wrapper.working_directory,
             "shell": job_wrapper.shell,
+            "galaxy_virtual_env": None,
         }
         job_file_contents = self.get_job_file(job_wrapper, **job_script_props)
         self.write_executable_script(job_file, job_file_contents, job_io=job_wrapper.job_io)

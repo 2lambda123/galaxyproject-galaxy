@@ -15,6 +15,9 @@ from queue import (
     Queue,
 )
 
+from sqlalchemy import select
+from sqlalchemy.orm import object_session
+
 import galaxy.jobs
 from galaxy import model
 from galaxy.exceptions import ConfigurationError
@@ -30,18 +33,21 @@ from galaxy.jobs.runners.util.job_script import (
     job_script,
     write_script,
 )
+from galaxy.model.base import transaction
 from galaxy.tool_util.deps.dependencies import (
     JobInfo,
     ToolInfo,
 )
 from galaxy.tool_util.output_checker import DETECTED_JOB_STATE
 from galaxy.util import (
+    asbool,
     DATABASE_MAX_STRING_SIZE,
     ExecutionTimer,
     in_directory,
     ParamsWithSpecs,
     shrink_stream_by_size,
     unicodify,
+    UNKNOWN,
 )
 from galaxy.util.custom_logging import get_logger
 from galaxy.util.monitors import Monitors
@@ -131,41 +137,58 @@ class BaseJobRunner:
     def run_next(self):
         """Run the next item in the work queue (a job waiting to run)"""
         while self._should_stop is False:
-            try:
-                (method, arg) = self.work_queue.get(timeout=1)
-            except Empty:
-                continue
-            if method is STOP_SIGNAL:
-                return
-            # id and name are collected first so that the call of method() is the last exception.
-            try:
-                if isinstance(arg, AsynchronousJobState):
-                    job_id = arg.job_wrapper.get_id_tag()
-                else:
-                    # arg should be a JobWrapper/TaskWrapper
-                    job_id = arg.get_id_tag()
-            except Exception:
-                job_id = "unknown"
-            try:
-                name = method.__name__
-            except Exception:
-                name = "unknown"
-            try:
-                action_str = f"galaxy.jobs.runners.{self.__class__.__name__.lower()}.{name}"
-                action_timer = self.app.execution_timer_factory.get_timer(
-                    f"internals.{action_str}", "job runner action %s for job ${job_id} executed" % (action_str)
-                )
-                method(arg)
-                log.trace(action_timer.to_str(job_id=job_id))
-            except Exception:
-                log.exception(f"({job_id}) Unhandled exception calling {name}")
-                if not isinstance(arg, JobState):
-                    job_state = JobState(job_wrapper=arg, job_destination={})
-                else:
-                    job_state = arg
-                if method != self.fail_job:
-                    # Prevent fail_job cycle in the work_queue
-                    self.work_queue.put((self.fail_job, job_state))
+            with self.app.model.session():  # Create a Session instance and ensure it's closed.
+                try:
+                    (method, arg) = self.work_queue.get(timeout=1)
+                except Empty:
+                    continue
+                if method is STOP_SIGNAL:
+                    return
+                # id and name are collected first so that the call of method() is the last exception.
+                try:
+                    if isinstance(arg, AsynchronousJobState):
+                        job_id = arg.job_wrapper.get_id_tag()
+                    else:
+                        # arg should be a JobWrapper/TaskWrapper
+                        job_id = arg.get_id_tag()
+                except Exception:
+                    job_id = UNKNOWN
+                try:
+                    name = method.__name__
+                except Exception:
+                    name = UNKNOWN
+
+                # Ensure a Job object belongs to a session
+                self._ensure_db_session(arg)
+
+                try:
+                    action_str = f"galaxy.jobs.runners.{self.__class__.__name__.lower()}.{name}"
+                    action_timer = self.app.execution_timer_factory.get_timer(
+                        f"internals.{action_str}", "job runner action %s for job ${job_id} executed" % (action_str)
+                    )
+                    method(arg)
+                    log.trace(action_timer.to_str(job_id=job_id))
+                except Exception:
+                    log.exception(f"({job_id}) Unhandled exception calling {name}")
+                    if not isinstance(arg, JobState):
+                        job_state = JobState(job_wrapper=arg, job_destination={})
+                    else:
+                        job_state = arg
+                    if method != self.fail_job:
+                        # Prevent fail_job cycle in the work_queue
+                        self.work_queue.put((self.fail_job, job_state))
+
+    def _ensure_db_session(self, arg: typing.Union["JobWrapper", "JobState"]) -> None:
+        """Ensure Job object belongs to current session."""
+        try:
+            job_wrapper = arg.job_wrapper  # type: ignore[union-attr]
+        except AttributeError:
+            job_wrapper = arg
+
+        if job_wrapper._job_io:
+            job = job_wrapper._job_io.job
+            if object_session(job) is None:
+                self.app.model.session().add(job)
 
     # Causes a runner's `queue_job` method to be called from a worker thread
     def put(self, job_wrapper: "MinimalJobWrapper"):
@@ -194,8 +217,7 @@ class BaseJobRunner:
         for _ in range(len(self.work_threads)):
             self.work_queue.put((STOP_SIGNAL, None))
 
-        join_timeout = self.app.config.monitor_thread_join_timeout
-        if join_timeout > 0:
+        if (join_timeout := self.app.config.monitor_thread_join_timeout) > 0:
             log.info("Waiting up to %d seconds for job worker threads to shutdown...", join_timeout)
             start = time.time()
             # NOTE: threads that have already joined by now are not going to be logged
@@ -342,7 +364,7 @@ class BaseJobRunner:
         output_paths = {}
         for dataset_path in job_wrapper.job_io.get_output_fnames():
             path = dataset_path.real_path
-            if job_wrapper.get_destination_configuration("outputs_to_working_directory", False):
+            if asbool(job_wrapper.get_destination_configuration("outputs_to_working_directory", False)):
                 path = dataset_path.false_path
             output_paths[dataset_path.dataset_id] = path
 
@@ -375,11 +397,12 @@ class BaseJobRunner:
                 dataset_assoc.dataset.dataset.history_associations + dataset_assoc.dataset.dataset.library_associations
             ):
                 if isinstance(dataset, self.app.model.HistoryDatasetAssociation):
-                    joda = (
-                        self.sa_session.query(self.app.model.JobToOutputDatasetAssociation)
+                    stmt = (
+                        select(self.app.model.JobToOutputDatasetAssociation)
                         .filter_by(job=job, dataset=dataset)
-                        .first()
+                        .limit(1)
                     )
+                    joda = self.sa_session.scalars(stmt).first()
                     yield (joda, dataset)
         # TODO: why is this not just something easy like:
         # for dataset_assoc in job.output_datasets + job.output_library_datasets:
@@ -589,23 +612,10 @@ class BaseJobRunner:
 
             tool_stdout_path = os.path.join(outputs_directory, "tool_stdout")
             tool_stderr_path = os.path.join(outputs_directory, "tool_stderr")
-            # TODO: These might not exist for running jobs at the upgrade to 19.XX, remove that
-            # assumption in 20.XX.
-            if os.path.exists(tool_stdout_path):
-                with open(tool_stdout_path, "rb") as stdout_file:
-                    tool_stdout = self._job_io_for_db(stdout_file)
-            else:
-                # Legacy job, were getting a merged output - assume it is mostly tool output.
-                tool_stdout = job_stdout
-                job_stdout = None
-
-            if os.path.exists(tool_stderr_path):
-                with open(tool_stderr_path, "rb") as stdout_file:
-                    tool_stderr = self._job_io_for_db(stdout_file)
-            else:
-                # Legacy job, were getting a merged output - assume it is mostly tool output.
-                tool_stderr = job_stderr
-                job_stderr = None
+            with open(tool_stdout_path, "rb") as stdout_file:
+                tool_stdout = self._job_io_for_db(stdout_file)
+            with open(tool_stderr_path, "rb") as stderr_file:
+                tool_stderr = self._job_io_for_db(stderr_file)
 
             check_output_detected_state = job_wrapper.check_tool_output(
                 tool_stdout,
@@ -624,7 +634,8 @@ class BaseJobRunner:
 
             # Flush with streams...
             self.sa_session.add(job)
-            self.sa_session.flush()
+            with transaction(self.sa_session):
+                self.sa_session.commit()
 
             if not job_ok:
                 job_runner_state = JobState.runner_states.TOOL_DETECT_ERROR

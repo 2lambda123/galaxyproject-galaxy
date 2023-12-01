@@ -51,29 +51,25 @@ def verify(
 
     Throw an informative assertion error if any of these tests fail.
     """
-    use_default_test_data_resolver = get_filecontent is None
     if get_filename is None:
+        get_filecontent_: Callable[[str], bytes]
+        if get_filecontent is None:
+            get_filecontent_ = DEFAULT_TEST_DATA_RESOLVER.get_filecontent
+        else:
+            get_filecontent_ = get_filecontent
 
         def get_filename(filename: str) -> str:
-            file_content = _retrieve_file_content(filename)
+            file_content = get_filecontent_(filename)
             local_name = make_temp_fname(fname=filename)
             with open(local_name, "wb") as f:
                 f.write(file_content)
             return local_name
 
-        def _retrieve_file_content(filename: str) -> bytes:
-            if use_default_test_data_resolver:
-                file_content = DEFAULT_TEST_DATA_RESOLVER.get_filecontent(filename, context=attributes)
-            else:
-                assert get_filecontent is not None
-                file_content = get_filecontent(filename)
-            return file_content
-
     # Check assertions...
     assertions = attributes.get("assert_list", None)
     if attributes is not None and assertions is not None:
         try:
-            verify_assertions(output_content, attributes["assert_list"])
+            verify_assertions(output_content, attributes["assert_list"], attributes.get("decompress"))
         except AssertionError as err:
             errmsg = f"{item_label} different than expected\n"
             errmsg += unicodify(err)

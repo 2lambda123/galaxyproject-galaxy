@@ -124,6 +124,7 @@ class ConfigSerializer(base.ModelSerializer):
             "wiki_url": _use_config,
             "screencasts_url": _use_config,
             "citation_url": _use_config,
+            "citations_export_message_html": _use_config,
             "support_url": _use_config,
             "quota_url": _use_config,
             "helpsite_url": _use_config,
@@ -156,7 +157,6 @@ class ConfigSerializer(base.ModelSerializer):
             "enable_unique_workflow_defaults": _use_config,
             "enable_beta_markdown_export": _use_config,
             "enable_beacon_integration": _use_config,
-            "use_legacy_history": _use_config,
             "simplified_workflow_run_ui": _use_config,
             "simplified_workflow_run_ui_target_history": _use_config,
             "simplified_workflow_run_ui_job_cache": _use_config,
@@ -175,6 +175,11 @@ class ConfigSerializer(base.ModelSerializer):
             "visualizations_visible": _use_config,
             "interactivetools_enable": _use_config,
             "aws_estimate": _use_config,
+            "carbon_emission_estimates": _defaults_to(True),
+            "carbon_intensity": _use_config,
+            "geographical_server_location_name": _use_config,
+            "geographical_server_location_code": _use_config,
+            "power_usage_effectiveness": _use_config,
             "message_box_content": _use_config,
             "message_box_visible": _use_config,
             "message_box_class": _use_config,
@@ -204,6 +209,17 @@ class ConfigSerializer(base.ModelSerializer):
             "user_library_import_dir_available": lambda item, key, **context: bool(item.get("user_library_import_dir")),
             "welcome_directory": _use_config,
             "themes": _use_config,
+            "tool_training_recommendations": _use_config,
+            "tool_training_recommendations_link": _use_config,
+            "tool_training_recommendations_api_url": _use_config,
+            "enable_notification_system": _use_config,
+            "instance_resource_url": _use_config,
+            "instance_access_url": _use_config,
+            "organization_name": _use_config,
+            "organization_url": _use_config,
+            "fixed_delegated_auth": _defaults_to(False),
+            "help_forum_api_url": _use_config,
+            "enable_help_forum_tool_panel_integration": _use_config,
         }
 
 
@@ -224,5 +240,9 @@ class AdminConfigSerializer(ConfigSerializer):
                 "user_library_import_dir": _defaults_to(None),
                 "allow_library_path_paste": _defaults_to(False),
                 "allow_user_deletion": _defaults_to(False),
+                "tool_shed_urls": self._serialize_tool_shed_urls,
             }
         )
+
+    def _serialize_tool_shed_urls(self, item: Any, key: str, **context) -> List[str]:
+        return list(self.app.tool_shed_registry.tool_sheds.values()) if self.app.tool_shed_registry else []

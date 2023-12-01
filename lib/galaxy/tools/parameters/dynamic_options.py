@@ -357,8 +357,6 @@ class AttributeValueSplitterFilter(Filter):
     """
     Filters a list of attribute-value pairs to be unique attribute names.
 
-    DEPRECATED: just replace with 2 rounds of MultipleSplitterFilter
-
     Type: attribute_value_splitter
 
     Required Attributes:
@@ -570,7 +568,7 @@ class DynamicOptions:
         self._tool_data_table = None
         self.elem = elem
         self.column_elem = elem.find("column")
-        self.tool_data_table  # Need to touch tool data table once to populate self.columns
+        self.tool_data_table  # noqa: B018 Need to touch tool data table once to populate self.columns
 
         # Options are defined by parsing tabular text data from a data file
         # on disk, a dataset, or the value of another parameter
@@ -716,10 +714,10 @@ class DynamicOptions:
                     if getattr(dataset, "purged", False) or getattr(dataset, "deleted", False):
                         log.warning(f"The metadata file inferred from key `{meta_file_key}` was deleted!")
                         continue
-                if not hasattr(dataset, "file_name"):
+                if not hasattr(dataset, "get_file_name"):
                     continue
                 # Ensure parsing dynamic options does not consume more than a megabyte worth memory.
-                path = dataset.file_name
+                path = dataset.get_file_name()
                 if os.path.getsize(path) < 1048576:
                     with open(path) as fh:
                         options += self.parse_file_fields(fh)

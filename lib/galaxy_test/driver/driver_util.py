@@ -56,7 +56,7 @@ from .test_logging import logging_config_file
 galaxy_root = galaxy_directory()
 DEFAULT_CONFIG_PREFIX = "GALAXY"
 GALAXY_TEST_DIRECTORY = os.path.join(galaxy_root, "test")
-GALAXY_TEST_FILE_DIR = "test-data,url-location,https://github.com/galaxyproject/galaxy-test-data.git"
+GALAXY_TEST_FILE_DIR = "test-data,https://github.com/galaxyproject/galaxy-test-data.git"
 TOOL_SHED_TEST_DATA = os.path.join(galaxy_root, "lib", "tool_shed", "test", "test_data")
 TEST_WEBHOOKS_DIR = os.path.join(galaxy_root, "test", "functional", "webhooks")
 FRAMEWORK_TOOLS_DIR = os.path.join(GALAXY_TEST_DIRECTORY, "functional", "tools")
@@ -227,7 +227,6 @@ def setup_galaxy_config(
         template_cache_path=template_cache_path,
         tool_config_file=tool_config_file,
         tool_data_table_config_path=tool_data_table_config_path,
-        tool_parse_help=False,
         tool_path=tool_path,
         update_integrated_tool_panel=update_integrated_tool_panel,
         use_tasked_jobs=True,
@@ -237,7 +236,7 @@ def setup_galaxy_config(
         logging=LOGGING_CONFIG_DEFAULT,
         monitor_thread_join_timeout=5,
         object_store_store_by="uuid",
-        fetch_url_allowlist="127.0.0.1",
+        fetch_url_allowlist=["127.0.0.0/24"],
         job_handler_monitor_sleep=0.2,
         job_runner_monitor_sleep=0.2,
         workflow_monitor_sleep=0.2,
@@ -342,6 +341,13 @@ def copy_database_template(source, db_path):
         raise Exception(f"Failed to copy database template from source {source}")
 
 
+def init_database(database_connection):
+    # We pass by migrations and instantiate the current table
+    create_database(database_connection)
+    mapping.init("/tmp", database_connection, create_tables=True, map_install_models=True)
+    toolshed_mapping.init(database_connection, create_tables=True)
+
+
 def database_conf(db_path, prefix="GALAXY", prefer_template_database=False):
     """Find (and populate if needed) Galaxy database connection."""
     database_auto_migrate = False
@@ -359,10 +365,7 @@ def database_conf(db_path, prefix="GALAXY", prefer_template_database=False):
             actual_database_parsed = database_template_parsed._replace(path=f"/{actual_db}")
             database_connection = actual_database_parsed.geturl()
             if not database_exists(database_connection):
-                # We pass by migrations and instantiate the current table
-                create_database(database_connection)
-                mapping.init("/tmp", database_connection, create_tables=True, map_install_models=True)
-                toolshed_mapping.init(database_connection, create_tables=True)
+                init_database(database_connection)
                 check_migrate_databases = False
     else:
         default_db_filename = f"{prefix.lower()}.sqlite"
@@ -581,7 +584,7 @@ def build_galaxy_app(simple_kwargs) -> GalaxyUniverseApplication:
     simple_kwargs["global_conf"]["__file__"] = "lib/galaxy/config/sample/galaxy.yml.sample"
     simple_kwargs = load_app_properties(kwds=simple_kwargs)
     # Build the Universe Application
-    app = GalaxyUniverseApplication(**simple_kwargs)
+    app = GalaxyUniverseApplication(**simple_kwargs, is_webapp=True)
     log.info("Embedded Galaxy application started")
 
     global install_context
@@ -851,8 +854,7 @@ class TestDriver:
             server_wrapper.stop()
         for th in threading.enumerate():
             log.debug(f"After stopping all servers thread {th} is alive.")
-        active_count = threading.active_count()
-        if active_count > 100:
+        if (active_count := threading.active_count()) > 100:
             # For an unknown reason running iRODS tests results in application threads not shutting down immediately,
             # but if we've accumulated over 100 active threads something else is wrong that needs to be fixed.
             raise Exception(
@@ -877,6 +879,8 @@ class GalaxyTestDriver(TestDriver):
         """Setup various variables used to launch a Galaxy server."""
         config_object = self._ensure_config_object(config_object)
         self.external_galaxy = os.environ.get("GALAXY_TEST_EXTERNAL", None)
+        if not self.external_galaxy:
+            os.environ["GALAXY_TEST_STRICT_CHECKS"] = "1"
 
         # Allow controlling the log format
         self.log_format = os.environ.get("GALAXY_TEST_LOG_FORMAT")

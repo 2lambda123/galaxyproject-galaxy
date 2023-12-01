@@ -1,17 +1,23 @@
 <script setup>
+import Heading from "components/Common/Heading";
 import FormMessage from "components/Form/FormMessage";
-import ToolFavoriteButton from "components/Tool/Buttons/ToolFavoriteButton.vue";
-import ToolVersionsButton from "components/Tool/Buttons/ToolVersionsButton.vue";
-import ToolOptionsButton from "components/Tool/Buttons/ToolOptionsButton.vue";
 import ToolFooter from "components/Tool/ToolFooter";
 import ToolHelp from "components/Tool/ToolHelp";
-import Heading from "components/Common/Heading";
+import { getAppRoot } from "onload/loadConfig";
+import { storeToRefs } from "pinia";
+import { computed, ref, watch } from "vue";
+
+import { useConfigStore } from "@/stores/configurationStore";
+import { useUserStore } from "@/stores/userStore";
+
 import ToolSelectPreferredObjectStore from "./ToolSelectPreferredObjectStore";
 import ToolTargetPreferredObjectStorePopover from "./ToolTargetPreferredObjectStorePopover";
-import { getAppRoot } from "onload/loadConfig";
 
-import { computed, ref, watch } from "vue";
-import { useCurrentUser } from "composables/user";
+import ToolHelpForum from "./ToolHelpForum.vue";
+import ToolTutorialRecommendations from "./ToolTutorialRecommendations.vue";
+import ToolFavoriteButton from "components/Tool/Buttons/ToolFavoriteButton.vue";
+import ToolOptionsButton from "components/Tool/Buttons/ToolOptionsButton.vue";
+import ToolVersionsButton from "components/Tool/Buttons/ToolVersionsButton.vue";
 
 const props = defineProps({
     id: {
@@ -77,8 +83,9 @@ function onSetError(e) {
     errorText.value = e;
 }
 
-const { currentUser: user } = useCurrentUser(false, true);
-const hasUser = computed(() => !user.value.isAnonymous);
+const { currentUser, isAnonymous } = storeToRefs(useUserStore());
+const { isLoaded: isConfigLoaded, config } = storeToRefs(useConfigStore());
+const hasUser = computed(() => !isAnonymous.value);
 const versions = computed(() => props.options.versions);
 const showVersions = computed(() => props.options.versions?.length > 1);
 
@@ -95,6 +102,8 @@ function onUpdatePreferredObjectStoreId(selectedToolPreferredObjectStoreId) {
     toolPreferredObjectStoreId.value = selectedToolPreferredObjectStoreId;
     emit("updatePreferredObjectStoreId", selectedToolPreferredObjectStoreId);
 }
+
+const showHelpForum = computed(() => isConfigLoaded.value && config.value.enable_help_forum_tool_panel_integration);
 </script>
 
 <template>
@@ -135,7 +144,7 @@ function onUpdatePreferredObjectStoreId(selectedToolPreferredObjectStoreId) {
                         <ToolTargetPreferredObjectStorePopover
                             v-if="allowObjectStoreSelection"
                             :tool-preferred-object-store-id="toolPreferredObjectStoreId"
-                            :user="user">
+                            :user="currentUser">
                         </ToolTargetPreferredObjectStorePopover>
                         <b-modal
                             v-model="showPreferredObjectStoreModal"
@@ -165,17 +174,25 @@ function onUpdatePreferredObjectStoreId(selectedToolPreferredObjectStoreId) {
         <slot name="buttons" />
 
         <div>
-            <div class="mt-2 mb-4">
+            <div v-if="props.options.help" class="mt-2 mb-4">
                 <Heading h2 separator bold size="sm"> Help </Heading>
                 <ToolHelp :content="props.options.help" />
             </div>
+
+            <ToolTutorialRecommendations
+                :id="props.options.id"
+                :name="props.options.name"
+                :version="props.options.version"
+                :owner="props.options.tool_shed_repository?.owner" />
+
+            <ToolHelpForum v-if="showHelpForum" :tool-id="props.id" :tool-name="props.title" />
 
             <ToolFooter
                 :id="props.id"
                 :has-citations="props.options.citations"
                 :xrefs="props.options.xrefs"
                 :license="props.options.license"
-                :creators="props.options.creators"
+                :creators="props.options.creator"
                 :requirements="props.options.requirements" />
         </div>
     </div>

@@ -210,6 +210,8 @@ class ToolDataTable(Dictifiable):
         allow_duplicates: bool = True,
         persist: bool = False,
         entry_source: EntrySource = None,
+        tool_data_file_path: Optional[str] = None,
+        use_first_file_path: bool = False,
         **kwd,
     ) -> None:
         raise NotImplementedError("Abstract method")
@@ -220,9 +222,19 @@ class ToolDataTable(Dictifiable):
         allow_duplicates: bool = True,
         persist: bool = False,
         entry_source: EntrySource = None,
+        tool_data_file_path: Optional[str] = None,
+        use_first_file_path: bool = False,
         **kwd,
     ) -> int:
-        self._add_entry(entry, allow_duplicates=allow_duplicates, persist=persist, entry_source=entry_source, **kwd)
+        self._add_entry(
+            entry,
+            allow_duplicates=allow_duplicates,
+            persist=persist,
+            entry_source=entry_source,
+            tool_data_file_path=tool_data_file_path,
+            use_first_file_path=use_first_file_path,
+            **kwd,
+        )
         return self._update_version()
 
     def add_entries(
@@ -238,6 +250,11 @@ class ToolDataTable(Dictifiable):
                 self.add_entry(
                     entry, allow_duplicates=allow_duplicates, persist=persist, entry_source=entry_source, **kwd
                 )
+            except MessageException as e:
+                if e.type == "warning":
+                    log.warning(str(e))
+                else:
+                    log.error(str(e))
             except Exception as e:
                 log.error(str(e))
         return self._loaded_content_version
@@ -647,6 +664,8 @@ class TabularToolDataTable(ToolDataTable):
         allow_duplicates: bool = True,
         persist: bool = False,
         entry_source: EntrySource = None,
+        tool_data_file_path: Optional[str] = None,
+        use_first_file_path: bool = False,
         **kwd,
     ) -> None:
         # accepts dict or list of columns
@@ -672,7 +691,8 @@ class TabularToolDataTable(ToolDataTable):
                 self.data.append(fields)
             else:
                 raise MessageException(
-                    f"Attempted to add fields ({fields}) to data table '{self.name}', but this entry already exists and allow_duplicates is False."
+                    f"Attempted to add fields ({fields}) to data table '{self.name}', but this entry already exists and allow_duplicates is False.",
+                    type="warning",
                 )
         else:
             raise MessageException(
@@ -681,7 +701,16 @@ class TabularToolDataTable(ToolDataTable):
         filename = None
 
         if persist:
-            filename = self.get_filename_for_source(entry_source)
+            if tool_data_file_path is not None:
+                filename = tool_data_file_path
+                if os.path.realpath(filename) not in [os.path.realpath(n) for n in self.filenames]:
+                    raise MessageException(f"Path '{tool_data_file_path}' is not a known data table file path.")
+            elif not use_first_file_path:
+                filename = self.get_filename_for_source(entry_source)
+            else:
+                for name in self.filenames:
+                    filename = name
+                    break
             if filename is None:
                 # If we reach this point, there is no data table with a corresponding .loc file.
                 raise MessageException(
@@ -865,9 +894,11 @@ class DirectoryAsExtraFiles(HasExtraFiles):
         return True
 
 
-class OutputDataset(HasExtraFiles):
+class OutputDataset(HasExtraFiles, Protocol):
     ext: str
-    file_name: str
+
+    def get_file_name(self, sync_cache=True) -> str:
+        ...
 
 
 class ToolDataTableManager(Dictifiable):
@@ -1151,8 +1182,10 @@ class ToolDataTableManager(Dictifiable):
         out_data: Dict[str, OutputDataset],
         bundle_description: DataTableBundleProcessorDescription,
         repo_info: Optional[RepoInfo],
-    ) -> None:
+    ) -> Dict[str, OutputDataset]:
+        """Writes bundle and returns bundle path."""
         data_manager_dict = _data_manager_dict(out_data, ensure_single_output=True)
+        bundle_datasets: Dict[str, OutputDataset] = {}
         for output_name, dataset in out_data.items():
             if dataset.ext != "data_manager_json":
                 continue
@@ -1167,6 +1200,8 @@ class ToolDataTableManager(Dictifiable):
             bundle_path = os.path.join(extra_files_path, BUNDLE_INDEX_FILE_NAME)
             with open(bundle_path, "w") as fw:
                 json.dump(bundle.dict(), fw)
+            bundle_datasets[bundle_path] = dataset
+        return bundle_datasets
 
 
 SUPPORTED_DATA_TABLE_TYPES = TabularToolDataTable
@@ -1177,6 +1212,7 @@ class BundleProcessingOptions:
     what: str
     data_manager_path: str
     target_config_file: str
+    tool_data_file_path: Optional[str] = None
 
 
 def _data_manager_dict(out_data: Dict[str, OutputDataset], ensure_single_output: bool = False) -> Dict[str, Any]:
@@ -1191,7 +1227,7 @@ def _data_manager_dict(out_data: Dict[str, OutputDataset], ensure_single_output:
         found_output = True
 
         try:
-            output_dict = json.loads(open(output_dataset.file_name).read())
+            output_dict = json.loads(open(output_dataset.get_file_name()).read())
         except Exception as e:
             log.warning(f'Error reading DataManagerTool json for "{output_name}": {e}')
             continue
@@ -1270,7 +1306,13 @@ def _process_bundle(
                     data_table_value[name] = _process_value_translations(
                         data_table_name, name, bundle_description, options, **data_table_value
                     )
-            data_table.add_entry(data_table_value, persist=True, entry_source=bundle.repo_info)
+            data_table.add_entry(
+                data_table_value,
+                persist=True,
+                entry_source=bundle.repo_info,
+                tool_data_file_path=options.tool_data_file_path,
+                use_first_file_path=True,
+            )
         # Removes data table entries
         for data_table_row in data_table_remove_values:
             data_table_value = dict(**data_table_row)  # keep original values here

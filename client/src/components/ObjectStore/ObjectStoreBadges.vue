@@ -1,3 +1,22 @@
+<script setup lang="ts">
+import type { components } from "@/api/schema";
+
+import ObjectStoreBadge from "./ObjectStoreBadge.vue";
+
+type BadgeType = components["schemas"]["BadgeDict"];
+
+interface ObjectStoreBadgesProps {
+    badges: Array<BadgeType>;
+    size?: string;
+    moreOnHover?: boolean;
+}
+
+withDefaults(defineProps<ObjectStoreBadgesProps>(), {
+    size: "3x",
+    moreOnHover: true,
+});
+</script>
+
 <template>
     <div class="object-store-badges">
         <ObjectStoreBadge
@@ -5,31 +24,7 @@
             :key="idx"
             :badge="badge"
             :size="size"
-            :moreOnHover="moreOnHover">
+            :more-on-hover="moreOnHover">
         </ObjectStoreBadge>
     </div>
 </template>
-
-<script>
-import ObjectStoreBadge from "./ObjectStoreBadge";
-
-export default {
-    components: {
-        ObjectStoreBadge,
-    },
-    props: {
-        badges: {
-            type: Array,
-            required: true,
-        },
-        size: {
-            type: String,
-            default: "3x",
-        },
-        moreOnHover: {
-            type: Boolean,
-            default: true,
-        },
-    },
-};
-</script>

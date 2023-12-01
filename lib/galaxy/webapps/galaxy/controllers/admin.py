@@ -18,6 +18,7 @@ from galaxy.exceptions import (
 )
 from galaxy.managers.quotas import QuotaManager
 from galaxy.model import tool_shed_install as install_model
+from galaxy.model.base import transaction
 from galaxy.security.validate_user_input import validate_password
 from galaxy.structured_app import StructuredApp
 from galaxy.util import (
@@ -76,7 +77,7 @@ class UserListGrid(grids.Grid):
     class LastLoginColumn(grids.GridColumn):
         def get_value(self, trans, grid, user):
             if user.galaxy_sessions:
-                return self.format(user.galaxy_sessions[0].update_time)
+                return self.format(user.current_galaxy_session.update_time)
             return "never"
 
         def sort(self, trans, query, ascending, column_name=None):
@@ -515,8 +516,7 @@ class ToolVersionListGrid(grids.Grid):
         def get_value(self, trans, grid, tool_version):
             tool_ids_str = ""
             toolbox = trans.app.toolbox
-            tool = toolbox._tools_by_id.get(tool_version.tool_id)
-            if tool:
+            if tool := toolbox._tools_by_id.get(tool_version.tool_id):
                 for tool_id in tool.lineage.tool_ids:
                     if toolbox.has_tool(tool_id, exact=True):
                         link = url_for(controller="tool_runner", tool_id=tool_id)
@@ -909,8 +909,7 @@ class AdminGalaxy(controller.JSAppLauncher):
         if not trans.app.config.allow_user_impersonation:
             return trans.show_error_message("User impersonation is not enabled in this instance of Galaxy.")
         user = None
-        user_id = kwd.get("id", None)
-        if user_id is not None:
+        if (user_id := kwd.get("id", None)) is not None:
             try:
                 user = trans.sa_session.query(trans.app.model.User).get(trans.security.decode_id(user_id))
                 if user:
@@ -1035,7 +1034,8 @@ class AdminGalaxy(controller.JSAppLauncher):
                     num_in_groups = len(in_groups) + 1
                 else:
                     num_in_groups = len(in_groups)
-                trans.sa_session.flush()
+                with transaction(trans.sa_session):
+                    trans.sa_session.commit()
                 message = f"Role '{role.name}' has been created with {len(in_users)} associated users and {num_in_groups} associated groups."
                 if auto_create_checked:
                     message += (
@@ -1075,7 +1075,8 @@ class AdminGalaxy(controller.JSAppLauncher):
                         role.name = new_name
                         role.description = new_description
                         trans.sa_session.add(role)
-                        trans.sa_session.flush()
+                        with transaction(trans.sa_session):
+                            trans.sa_session.commit()
             return {"message": f"Role '{old_name}' has been renamed to '{new_name}'."}
 
     @web.legacy_expose_api
@@ -1139,7 +1140,8 @@ class AdminGalaxy(controller.JSAppLauncher):
                         for dhp in history.default_permissions:
                             if role == dhp.role:
                                 trans.sa_session.delete(dhp)
-                    trans.sa_session.flush()
+                    with transaction(trans.sa_session):
+                        trans.sa_session.commit()
             trans.app.security_agent.set_entity_role_associations(roles=[role], users=in_users, groups=in_groups)
             trans.sa_session.refresh(role)
             return {
@@ -1152,7 +1154,8 @@ class AdminGalaxy(controller.JSAppLauncher):
             role = get_role(trans, role_id)
             role.deleted = True
             trans.sa_session.add(role)
-            trans.sa_session.flush()
+            with transaction(trans.sa_session):
+                trans.sa_session.commit()
             message += f" {role.name} "
         return (message, "done")
 
@@ -1165,7 +1168,8 @@ class AdminGalaxy(controller.JSAppLauncher):
                 return (f"Role '{role.name}' has not been deleted, so it cannot be undeleted.", "error")
             role.deleted = False
             trans.sa_session.add(role)
-            trans.sa_session.flush()
+            with transaction(trans.sa_session):
+                trans.sa_session.commit()
             count += 1
             undeleted_roles += f" {role.name}"
         return ("Undeleted %d roles: %s" % (count, undeleted_roles), "done")
@@ -1202,7 +1206,8 @@ class AdminGalaxy(controller.JSAppLauncher):
             # Delete DatasetPermissionss
             for dp in role.dataset_actions:
                 trans.sa_session.delete(dp)
-            trans.sa_session.flush()
+            with transaction(trans.sa_session):
+                trans.sa_session.commit()
             message += f" {role.name} "
         return (message, "done")
 
@@ -1255,7 +1260,8 @@ class AdminGalaxy(controller.JSAppLauncher):
                     if not (group.name == new_name):
                         group.name = new_name
                         trans.sa_session.add(group)
-                        trans.sa_session.flush()
+                        with transaction(trans.sa_session):
+                            trans.sa_session.commit()
             return {"message": f"Group '{old_name}' has been renamed to '{new_name}'."}
 
     @web.legacy_expose_api
@@ -1394,7 +1400,8 @@ class AdminGalaxy(controller.JSAppLauncher):
                     num_in_roles = len(in_roles) + 1
                 else:
                     num_in_roles = len(in_roles)
-                trans.sa_session.flush()
+                with transaction(trans.sa_session):
+                    trans.sa_session.commit()
                 message = "Group '%s' has been created with %d associated users and %d associated roles." % (
                     group.name,
                     len(in_users),
@@ -1412,7 +1419,8 @@ class AdminGalaxy(controller.JSAppLauncher):
             group = get_group(trans, group_id)
             group.deleted = True
             trans.sa_session.add(group)
-            trans.sa_session.flush()
+            with transaction(trans.sa_session):
+                trans.sa_session.commit()
             message += f" {group.name} "
         return (message, "done")
 
@@ -1425,7 +1433,8 @@ class AdminGalaxy(controller.JSAppLauncher):
                 return (f"Group '{group.name}' has not been deleted, so it cannot be undeleted.", "error")
             group.deleted = False
             trans.sa_session.add(group)
-            trans.sa_session.flush()
+            with transaction(trans.sa_session):
+                trans.sa_session.commit()
             count += 1
             undeleted_groups += f" {group.name}"
         return ("Undeleted %d groups: %s" % (count, undeleted_groups), "done")
@@ -1442,7 +1451,8 @@ class AdminGalaxy(controller.JSAppLauncher):
             # Delete GroupRoleAssociations
             for gra in group.roles:
                 trans.sa_session.delete(gra)
-            trans.sa_session.flush()
+            with transaction(trans.sa_session):
+                trans.sa_session.commit()
             message += f" {group.name} "
         return (message, "done")
 
@@ -1474,7 +1484,8 @@ class AdminGalaxy(controller.JSAppLauncher):
                 for user in users.values():
                     user.set_password_cleartext(password)
                     trans.sa_session.add(user)
-                    trans.sa_session.flush()
+                    with transaction(trans.sa_session):
+                        trans.sa_session.commit()
                 return {"message": "Passwords reset for %d user(s)." % len(users)}
         else:
             return self.message_exception(trans, "Please specify user ids.")
@@ -1542,7 +1553,8 @@ class AdminGalaxy(controller.JSAppLauncher):
             user_id=trans.security.decode_id(user_id), key=trans.app.security.get_new_guid()
         )
         trans.sa_session.add(new_key)
-        trans.sa_session.flush()
+        with transaction(trans.sa_session):
+            trans.sa_session.commit()
         return (f"New key '{new_key.key}' generated for requested user '{user.email}'.", "done")
 
     def _activate_user(self, trans, user_id):

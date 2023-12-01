@@ -20,8 +20,9 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ['3.7', '3.11']
+        python-version: ['3.8', '3.11']
     env:
       LINT_PATH: 'lib/galaxy/dependencies/pinned-lint-requirements.txt'
       TYPE_PATH: 'lib/galaxy/dependencies/pinned-typecheck-requirements.txt'
@@ -54,4 +55,6 @@ jobs:
       - name: Run mypy checks
         run: tox -e mypy
       - uses: psf/black@stable
+        with:
+          version: "23.3.0"
       - uses: isort/isort-action@master

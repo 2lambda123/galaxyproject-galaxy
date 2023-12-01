@@ -1,22 +1,39 @@
 <template>
     <span>
-        <b-button id="workflow-create" class="m-1" @click="navigateToCreate">
-            <font-awesome-icon icon="plus" />
+        <BButton
+            id="workflow-create"
+            v-b-tooltip.hover
+            aria-haspopup="true"
+            :title="createTitle"
+            :disabled="isAnonymous"
+            class="m-1"
+            @click="navigateToCreate">
+            <FontAwesomeIcon icon="plus" />
             {{ "Create" | localize }}
-        </b-button>
-        <b-button id="workflow-import" class="m-1" @click="navigateToImport">
-            <font-awesome-icon icon="upload" />
+        </BButton>
+        <BButton
+            id="workflow-import"
+            v-b-tooltip.hover
+            aria-haspopup="true"
+            :title="importTitle"
+            :disabled="isAnonymous"
+            class="m-1"
+            @click="navigateToImport">
+            <FontAwesomeIcon icon="upload" />
             {{ "Import" | localize }}
-        </b-button>
+        </BButton>
     </span>
 </template>
 
 <script>
+import { library } from "@fortawesome/fontawesome-svg-core";
+import { faPlus, faUpload } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { BButton } from "bootstrap-vue";
+import { mapState } from "pinia";
 
-import { faPlus, faUpload } from "@fortawesome/free-solid-svg-icons";
-import { library } from "@fortawesome/fontawesome-svg-core";
+import { useUserStore } from "@/stores/userStore";
+
 library.add(faPlus, faUpload);
 
 export default {
@@ -24,9 +41,20 @@ export default {
         BButton,
         FontAwesomeIcon,
     },
+    computed: {
+        ...mapState(useUserStore, ["isAnonymous"]),
+        createTitle() {
+            return this.isAnonymous ? "Please log in or register to use this feature" : "Create a new workflow";
+        },
+        importTitle() {
+            return this.isAnonymous
+                ? "Please log in or register to use this feature"
+                : "Import a workflow from URL or registry";
+        },
+    },
     methods: {
         navigateToCreate: function () {
-            this.$router.push("/workflows/create");
+            this.$router.push("/workflows/edit");
         },
         navigateToImport: function () {
             this.$router.push("/workflows/import");

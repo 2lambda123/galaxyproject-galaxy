@@ -24,8 +24,11 @@ import pytest
 from galaxy.app import UniverseApplication
 from galaxy.tool_util.verify.test_data import TestDataResolver
 from galaxy.util import safe_makedirs
-from galaxy.util.commands import which
 from galaxy.util.unittest import TestCase
+from galaxy.util.unittest_utils import (
+    _identity,
+    skip_unless_executable,
+)
 from galaxy_test.base.api import (
     UsesApiTestCaseMixin,
     UsesCeleryTasks,
@@ -39,10 +42,8 @@ NO_APP_MESSAGE = "test_case._app called though no Galaxy has been configured."
 # Following should be for Homebrew Rabbitmq and Docker on Mac "amqp://guest:guest@localhost:5672//"
 AMQP_URL = os.environ.get("GALAXY_TEST_AMQP_URL", None)
 POSTGRES_CONFIGURED = "postgres" in os.environ.get("GALAXY_TEST_DBURI", "")
-
-
-def _identity(func):
-    return func
+SCRIPT_DIRECTORY = os.path.abspath(os.path.dirname(__file__))
+VAULT_CONF = os.path.join(SCRIPT_DIRECTORY, "vault_conf.yml")
 
 
 def skip_if_jenkins(cls):
@@ -62,12 +63,6 @@ def skip_unless_postgres():
     if POSTGRES_CONFIGURED:
         return _identity
     return pytest.mark.skip("GALAXY_TEST_DBURI does not point to postgres database, required for this test.")
-
-
-def skip_unless_executable(executable):
-    if which(executable):
-        return _identity
-    return pytest.mark.skip(f"PATH doesn't contain executable {executable}")
 
 
 def skip_unless_docker():
@@ -135,8 +130,7 @@ class IntegrationInstance(UsesApiTestCaseMixin, UsesCeleryTasks):
         cls._app_available = False
 
     def tearDown(self):
-        logs = self._test_driver.get_logs()
-        if logs:
+        if logs := self._test_driver.get_logs():
             print(logs)
         return super().tearDown()
 
@@ -243,3 +237,9 @@ class ConfiguresObjectStores:
             os.path.join(temp_directory, dir_name)
             safe_makedirs(path)
             setattr(cls, f"{dir_name}_path", path)
+
+
+class ConfiguresDatabaseVault:
+    @classmethod
+    def _configure_database_vault(cls, config):
+        config["vault_config_file"] = VAULT_CONF

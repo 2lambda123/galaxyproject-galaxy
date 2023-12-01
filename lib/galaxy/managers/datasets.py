@@ -13,6 +13,8 @@ from typing import (
     TypeVar,
 )
 
+from sqlalchemy import select
+
 from galaxy import (
     exceptions,
     model,
@@ -25,7 +27,15 @@ from galaxy.managers import (
     secured,
     users,
 )
-from galaxy.schema.tasks import ComputeDatasetHashTaskRequest
+from galaxy.model import (
+    Dataset,
+    DatasetHash,
+)
+from galaxy.model.base import transaction
+from galaxy.schema.tasks import (
+    ComputeDatasetHashTaskRequest,
+    PurgeDatasetsTaskRequest,
+)
 from galaxy.structured_app import MinimalManagerApp
 from galaxy.util.hash_util import memory_bound_hexdigest
 
@@ -63,7 +73,9 @@ class DatasetManager(base.ModelManager[model.Dataset], secured.AccessibleManager
         self.permissions.set(dataset, manage_roles, access_roles, flush=False)
 
         if flush:
-            self.session().flush()
+            session = self.session()
+            with transaction(session):
+                session.commit()
         return dataset
 
     def copy(self, dataset, **kwargs):
@@ -82,8 +94,27 @@ class DatasetManager(base.ModelManager[model.Dataset], secured.AccessibleManager
         dataset.full_delete()
         self.session().add(dataset)
         if flush:
-            self.session().flush()
+            session = self.session()
+            with transaction(session):
+                session.commit()
         return dataset
+
+    def purge_datasets(self, request: PurgeDatasetsTaskRequest):
+        """
+        Caution: any additional security checks must be done before executing this action.
+
+        Completely removes a set of object_store/files associated with the datasets from storage and marks them as purged.
+        They might not be removed if there are still un-purged associations to the dataset.
+        """
+        self.error_unless_dataset_purge_allowed()
+        with self.session().begin():
+            for dataset_id in request.dataset_ids:
+                dataset: Dataset = self.session().get(Dataset, dataset_id)
+                if dataset.user_can_purge:
+                    try:
+                        dataset.full_delete()
+                    except Exception:
+                        log.exception(f"Unable to purge dataset ({dataset.id})")
 
     # TODO: this may be more conv. somewhere else
     # TODO: how to allow admin bypass?
@@ -120,7 +151,7 @@ class DatasetManager(base.ModelManager[model.Dataset], secured.AccessibleManager
             extra_dir = dataset.extra_files_path_name
             file_path = self.app.object_store.get_filename(dataset, extra_dir=extra_dir, alt_name=extra_files_path)
         else:
-            file_path = dataset.file_name
+            file_path = dataset.get_file_name()
         hash_function = request.hash_function
         calculated_hash_value = memory_bound_hexdigest(hash_func_name=hash_function, path=file_path)
         extra_files_path = request.extra_files_path
@@ -133,18 +164,11 @@ class DatasetManager(base.ModelManager[model.Dataset], secured.AccessibleManager
         # TODO: replace/update if the combination of dataset_id/hash_function has already
         # been stored.
         sa_session = self.session()
-        hash = (
-            sa_session.query(model.DatasetHash)
-            .filter(
-                model.DatasetHash.dataset_id == dataset.id,
-                model.DatasetHash.hash_function == hash_function,
-                model.DatasetHash.extra_files_path == extra_files_path,
-            )
-            .one_or_none()
-        )
+        hash = get_dataset_hash(sa_session, dataset.id, hash_function, extra_files_path)
         if hash is None:
             sa_session.add(dataset_hash)
-            sa_session.flush()
+            with transaction(sa_session):
+                sa_session.commit()
         else:
             old_hash_value = hash.hash_value
             if old_hash_value != calculated_hash_value:
@@ -249,7 +273,7 @@ class DatasetSerializer(base.ModelSerializer[DatasetManager], deletable.Purgable
         # expensive: allow config option due to cost of operation
         if is_admin or self.app.config.expose_dataset_path:
             if not dataset.purged:
-                return dataset.file_name
+                return dataset.get_file_name(sync_cache=False)
         self.skip()
 
     def serialize_extra_files_path(self, item, key, user=None, **context):
@@ -379,7 +403,9 @@ class DatasetAssociationManager(
                     if not track_jobs_in_database:
                         self.app.job_manager.stop(job)
                     if flush:
-                        self.session().flush()
+                        session = self.session()
+                        with transaction(session):
+                            session.commit()
                     return True
         return False
 
@@ -449,18 +475,19 @@ class DatasetAssociationManager(
 
     def detect_datatype(self, trans, dataset_assoc):
         """Sniff and assign the datatype to a given dataset association (ldda or hda)"""
-        data = trans.sa_session.query(self.model_class).get(dataset_assoc.id)
+        data = trans.sa_session.get(self.model_class, dataset_assoc.id)
         self.ensure_can_change_datatype(data)
         self.ensure_can_set_metadata(data)
-        path = data.dataset.file_name
+        path = data.dataset.get_file_name()
         datatype = sniff.guess_ext(path, trans.app.datatypes_registry.sniff_order)
         trans.app.datatypes_registry.change_datatype(data, datatype)
-        trans.sa_session.flush()
+        with transaction(trans.sa_session):
+            trans.sa_session.commit()
         self.set_metadata(trans, dataset_assoc)
 
     def set_metadata(self, trans, dataset_assoc, overwrite=False, validate=True):
         """Trigger a job that detects and sets metadata on a given dataset association (ldda or hda)"""
-        data = trans.sa_session.query(self.model_class).get(dataset_assoc.id)
+        data = trans.sa_session.get(self.model_class, dataset_assoc.id)
         self.ensure_can_set_metadata(data)
         if overwrite:
             self.overwrite_metadata(data)
@@ -512,7 +539,8 @@ class DatasetAssociationManager(
                     trans.app.security_agent.permitted_actions.DATASET_ACCESS.action, dataset, private_role
                 )
                 trans.sa_session.add(dp)
-                trans.sa_session.flush()
+                with transaction(trans.sa_session):
+                    trans.sa_session.commit()
             if not trans.app.security_agent.dataset_is_private_to_user(trans, dataset):
                 # Check again and inform the user if dataset is not private.
                 raise exceptions.InternalServerError("An error occurred and the dataset is NOT private.")
@@ -641,7 +669,7 @@ class _UnflattenedMetadataDatasetAssociationSerializer(base.ModelSerializer[T], 
                 # only when explicitly set: fetching filepaths can be expensive
                 if not self.app.config.expose_dataset_path:
                     continue
-                val = val.file_name
+                val = val.get_file_name()
             # TODO:? possibly split this off?
             # If no value for metadata, look in datatype for metadata.
             elif val is None and hasattr(dataset_assoc.datatype, name):
@@ -793,7 +821,8 @@ class DatasetAssociationDeserializer(base.ModelDeserializer, deletable.PurgableD
             )
         item.change_datatype(val)
         sa_session = self.app.model.context
-        sa_session.flush()
+        with transaction(sa_session):
+            sa_session.commit()
         trans = context.get("trans")
         assert (
             trans
@@ -843,3 +872,13 @@ class DatasetAssociationFilterParser(base.ModelFilterParser, deletable.PurgableF
             if datatype_class:
                 comparison_classes.append(datatype_class)
         return comparison_classes and isinstance(dataset_assoc.datatype, tuple(comparison_classes))
+
+
+def get_dataset_hash(session, dataset_id, hash_function, extra_files_path):
+    stmt = (
+        select(DatasetHash)
+        .where(DatasetHash.dataset_id == dataset_id)
+        .where(DatasetHash.hash_function == hash_function)
+        .where(DatasetHash.extra_files_path == extra_files_path)
+    )
+    return session.scalars(stmt).one_or_none()

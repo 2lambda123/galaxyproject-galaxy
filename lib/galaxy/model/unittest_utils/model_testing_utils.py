@@ -4,7 +4,6 @@ from contextlib import contextmanager
 from typing import (
     Callable,
     Iterator,
-    NewType,
     Optional,
 )
 
@@ -20,7 +19,11 @@ from sqlalchemy.engine import (
 )
 from sqlalchemy.sql.compiler import IdentifierPreparer
 
-from galaxy.model.database_utils import create_database
+from galaxy.model.database_utils import (
+    create_database,
+    DbUrl,
+    is_postgres,
+)
 
 # GALAXY_TEST_CONNECT_POSTGRES_URI='postgresql://postgres@localhost:5432/postgres' pytest test/unit/model
 skip_if_not_postgres_uri = pytest.mark.skipif(
@@ -31,8 +34,6 @@ skip_if_not_postgres_uri = pytest.mark.skipif(
 skip_if_not_mysql_uri = pytest.mark.skipif(
     not os.environ.get("GALAXY_TEST_CONNECT_MYSQL_URI"), reason="GALAXY_TEST_CONNECT_MYSQL_URI not set"
 )
-
-DbUrl = NewType("DbUrl", str)
 
 
 @contextmanager
@@ -45,7 +46,7 @@ def create_and_drop_database(url: DbUrl) -> Iterator[None]:
         create_database(url)
         yield
     finally:
-        if _is_postgres(url):
+        if is_postgres(url):
             _drop_postgres_database(url)
 
 
@@ -58,7 +59,7 @@ def drop_existing_database(url: DbUrl) -> Iterator[None]:
     try:
         yield
     finally:
-        if _is_postgres(url):
+        if is_postgres(url):
             _drop_postgres_database(url)
 
 
@@ -73,6 +74,20 @@ def disposing_engine(url: DbUrl) -> Iterator[Engine]:
 
 
 @pytest.fixture
+def sqlite_url_factory(tmp_directory: str) -> Callable[[], DbUrl]:
+    """
+    Same as url_factory, except this returns a sqlite url only.
+    This is used when we want to ensure a test runs under sqlite.
+    """
+
+    def url() -> DbUrl:
+        database = _generate_unique_database_name()
+        return _make_sqlite_db_url(tmp_directory, database)
+
+    return url
+
+
+@pytest.fixture
 def url_factory(tmp_directory: str) -> Callable[[], DbUrl]:
     """
     Return a factory function that produces a database url with a unique database name.
@@ -82,8 +97,7 @@ def url_factory(tmp_directory: str) -> Callable[[], DbUrl]:
 
     def url() -> DbUrl:
         database = _generate_unique_database_name()
-        connection_url = _get_connection_url()
-        if connection_url:
+        if connection_url := _get_connection_url():
             return _make_postgres_db_url(DbUrl(connection_url), database)
         else:
             return _make_sqlite_db_url(tmp_directory, database)
@@ -100,8 +114,7 @@ def url(tmp_directory: str) -> str:
     """
     # TODO this duplication should be removed (see url_factory).
     database = _generate_unique_database_name()
-    connection_url = _get_connection_url()
-    if connection_url:
+    if connection_url := _get_connection_url():
         return _make_postgres_db_url(DbUrl(connection_url), database)
     else:
         return _make_sqlite_db_url(tmp_directory, database)
@@ -127,7 +140,7 @@ def drop_database(db_url, database):
 
     Used only for test purposes to cleanup after creating a test database.
     """
-    if _is_postgres(db_url) or _is_mysql(db_url):
+    if is_postgres(db_url) or _is_mysql(db_url):
         _drop_database(db_url, database)
     else:
         url = make_url(db_url)
@@ -205,10 +218,6 @@ def get_stored_obj(session, cls, obj_id=None, where_clause=None, unique=False):
 def get_stored_instance_by_id(session, cls_, id):
     statement = select(cls_).where(cls_.__table__.c.id == id)
     return session.execute(statement).scalar_one()
-
-
-def _is_postgres(url: DbUrl) -> bool:
-    return url.startswith("postgres")
 
 
 def _is_mysql(url: DbUrl) -> bool:

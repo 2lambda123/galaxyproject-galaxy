@@ -3,6 +3,7 @@ import mimetypes
 from typing import Optional
 from urllib.parse import quote_plus
 
+from galaxy.model.base import transaction
 from galaxy.util import string_as_bool
 from galaxy.util.bunch import Bunch
 from galaxy.util.template import fill_template
@@ -105,7 +106,7 @@ class DisplayApplicationDataParameter(DisplayApplicationParameter):
         if self.metadata:
             rval = getattr(data.metadata, self.metadata, None)
             assert rval, f'Unknown metadata name "{self.metadata}" provided for dataset type "{data.ext}".'
-            return Bunch(file_name=rval.file_name, state=data.state, states=data.states, extension="data")
+            return Bunch(file_name=rval.get_file_name(), state=data.state, states=data.states, extension="data")
         elif self.extensions and (self.force_conversion or not isinstance(data.datatype, self.formats)):
             for ext in self.extensions:
                 rval = data.get_converted_files_by_type(ext)
@@ -117,8 +118,7 @@ class DisplayApplicationDataParameter(DisplayApplicationParameter):
         return data
 
     def get_value(self, other_values, dataset_hash, user_hash, trans):
-        data = self._get_dataset_like_object(other_values)
-        if data:
+        if data := self._get_dataset_like_object(other_values):
             return DisplayDataValueWrapper(data, self, other_values, dataset_hash, user_hash, trans)
         return None
 
@@ -151,7 +151,8 @@ class DisplayApplicationDataParameter(DisplayApplicationParameter):
                         parent=data, file_type=target_ext, dataset=new_data, metadata_safe=False
                     )
                     trans.sa_session.add(assoc)
-                    trans.sa_session.flush()
+                    with transaction(trans.sa_session):
+                        trans.sa_session.commit()
                 elif converted_dataset and converted_dataset.state == converted_dataset.states.ERROR:
                     raise Exception(f"Dataset conversion failed for data parameter: {self.name}")
         return self.get_value(other_values, dataset_hash, user_hash, trans)
@@ -163,8 +164,7 @@ class DisplayApplicationDataParameter(DisplayApplicationParameter):
         return False
 
     def ready(self, other_values):
-        value = self._get_dataset_like_object(other_values)
-        if value:
+        if value := self._get_dataset_like_object(other_values):
             if value.state == value.states.OK:
                 return True
             elif value.state == value.states.ERROR:
@@ -227,7 +227,8 @@ class DisplayParameterValueWrapper:
             base_url = f"http{base_url[5:]}"
         return "{}{}".format(
             base_url,
-            self.trans.app.url_for(
+            self.trans.app.legacy_url_for(
+                mapper=self.trans.app.legacy_mapper,
                 controller="dataset",
                 action="display_application",
                 dataset_id=self._dataset_hash,
@@ -236,6 +237,7 @@ class DisplayParameterValueWrapper:
                 link_name=quote_plus(self.parameter.link.id),
                 app_action=self.action_name,
                 action_param=self._url,
+                environ=self.trans.request.environ,
             ),
         )
 
@@ -257,7 +259,7 @@ class DisplayDataValueWrapper(DisplayParameterValueWrapper):
 
     def __str__(self):
         # string of data param is filename
-        return str(self.value.file_name)
+        return str(self.value.get_file_name())
 
     def mime_type(self, action_param_extra=None):
         if self.parameter.mime_type is not None:

@@ -46,6 +46,7 @@ from galaxy.managers import (
 from galaxy.managers.job_connections import JobConnectionsManager
 from galaxy.schema import ValueFilterQueryParams
 from galaxy.structured_app import MinimalManagerApp
+from galaxy.util import listify
 from .base import (
     parse_bool,
     raise_filter_err,
@@ -97,24 +98,6 @@ class HistoryContentsManager(base.SortableManager):
         self.subcontainer_manager = app[self.subcontainer_class_manager_class]
 
     # ---- interface
-    def contained(self, container, filters=None, limit=None, offset=None, order_by=None, **kwargs):
-        """
-        Returns non-subcontainer objects within `container`.
-        """
-        filter_to_inside_container = self._get_filter_for_contained(container, self.contained_class)
-        filters = base.munge_lists(filter_to_inside_container, filters)
-        return self.contained_manager.list(filters=filters, limit=limit, offset=offset, order_by=order_by, **kwargs)
-
-    def subcontainers(self, container, filters=None, limit=None, offset=None, order_by=None, **kwargs):
-        """
-        Returns only the containers within `container`.
-        """
-        filter_to_inside_container = self._get_filter_for_contained(container, self.subcontainer_class)
-        filters = base.munge_lists(filter_to_inside_container, filters)
-        # TODO: collections.DatasetCollectionManager doesn't have the list
-        # return self.subcontainer_manager.list( filters=filters, limit=limit, offset=offset, order_by=order_by, **kwargs )
-        return self._session().query(self.subcontainer_class).filter(filters).all()
-
     def contents(self, container, filters=None, limit=None, offset=None, order_by=None, **kwargs):
         """
         Returns a list of both/all types of contents, filtered and in some order.
@@ -179,7 +162,7 @@ class HistoryContentsManager(base.SortableManager):
         ]
         contents_subquery = self._union_of_contents_query(history, filters=filters).subquery()
         statement = (
-            sql.select([sql.column("state"), func.count("*")])
+            sql.select(sql.column("state"), func.count("*"))
             .select_from(contents_subquery)
             .group_by(sql.column("state"))
         )
@@ -240,15 +223,6 @@ class HistoryContentsManager(base.SortableManager):
     # ---- private
     def _session(self):
         return self.app.model.context
-
-    def _filter_to_contents_query(self, container, content_class, **kwargs):
-        # TODO: use list (or by_history etc.)
-        container_filter = self._get_filter_for_contained(container, content_class)
-        query = self._session().query(content_class).filter(container_filter)
-        return query
-
-    def _get_filter_for_contained(self, container, content_class):
-        return content_class.history == container
 
     def _union_of_contents(self, container, expand_models=True, **kwargs):
         """
@@ -433,39 +407,31 @@ class HistoryContentsManager(base.SortableManager):
         if not id_list:
             return []
         component_class = self.contained_class
-        query = (
-            self._session()
-            .query(component_class)
-            .filter(component_class.id.in_(id_list))
+        stmt = (
+            select(component_class)
+            .where(component_class.id.in_(id_list))  # type: ignore[attr-defined]
             .options(undefer(component_class._metadata))
             .options(joinedload(component_class.dataset).joinedload(model.Dataset.actions))
             .options(joinedload(component_class.tags))
             .options(joinedload(component_class.annotations))  # type: ignore[attr-defined]
         )
-        return {row.id: row for row in query.all()}
+        result = self._session().scalars(stmt).unique()
+        return {row.id: row for row in result}
 
     def _subcontainer_id_map(self, id_list, serialization_params=None):
         """Return an id to model map of all subcontainer-type models in the id_list."""
         if not id_list:
             return []
         component_class = self.subcontainer_class
-        query = (
-            self._session()
-            .query(component_class)
-            .filter(component_class.id.in_(id_list))
+        stmt = (
+            select(component_class)
+            .where(component_class.id.in_(id_list))
             .options(joinedload(component_class.collection))
             .options(joinedload(component_class.tags))
             .options(joinedload(component_class.annotations))
         )
-
-        # This will conditionally join a potentially costly job_state summary
-        # All the paranoia if-checking makes me wonder if serialization_params
-        # should really be a property of the manager class instance
-        if serialization_params and serialization_params.keys:
-            if "job_state_summary" in serialization_params.keys:
-                query = query.options(joinedload(component_class.job_state_summary))
-
-        return {row.id: row for row in query.all()}
+        result = self._session().scalars(stmt).unique()
+        return {row.id: row for row in result}
 
 
 class HistoryContentsSerializer(base.ModelSerializer, deletable.PurgableSerializerMixin):
@@ -566,7 +532,8 @@ class HistoryContentsFilters(
 
             if attr == "related":
                 if op == "eq":
-                    return sql.column("hid").in_(json.loads(val))
+                    # unclear if multiple related values make sense, maybe this should be `.eq_` instead
+                    return sql.column("hid").in_(listify(json.loads(val)))
                 raise_filter_err(attr, op, val, "bad op in filter")
 
             if attr == "type_id":
@@ -601,8 +568,7 @@ class HistoryContentsFilters(
                     return sql.column("state").in_(states)
                 raise_filter_err(attr, op, val, "bad op in filter")
 
-        column_filter = get_filter(attr, op, val)
-        if column_filter is not None:
+        if (column_filter := get_filter(attr, op, val)) is not None:
             return self.parsed_filter(filter_type="orm", filter=column_filter)
         return super()._parse_orm_filter(attr, op, val)
 

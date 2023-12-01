@@ -11,12 +11,20 @@ from typing import (
     Union,
 )
 
+from sqlalchemy import select
+
 from galaxy import (
     model,
     util,
 )
 from galaxy.exceptions import ActionInputError
 from galaxy.managers import base
+from galaxy.model import (
+    Group,
+    Quota,
+    User,
+)
+from galaxy.model.base import transaction
 from galaxy.quota import DatabaseQuotaAgent
 from galaxy.quota._schema import (
     CreateQuotaParams,
@@ -45,7 +53,8 @@ class QuotaManager:
     def create_quota(self, payload: dict, decode_id=None) -> Tuple[model.Quota, str]:
         params = CreateQuotaParams.parse_obj(payload)
         create_amount = self._parse_amount(params.amount)
-        if self.sa_session.query(model.Quota).filter(model.Quota.name == params.name).first():
+        stmt = select(Quota).where(Quota.name == params.name).limit(1)
+        if self.sa_session.scalars(stmt).first():
             raise ActionInputError(
                 "Quota names must be unique and a quota with that name already exists, please choose another name."
             )
@@ -73,12 +82,10 @@ class QuotaManager:
         else:
             # Create the UserQuotaAssociations
             in_users = [
-                self.sa_session.query(model.User).get(decode_id(x) if decode_id else x)
-                for x in util.listify(params.in_users)
+                self.sa_session.get(User, decode_id(x) if decode_id else x) for x in util.listify(params.in_users)
             ]
             in_groups = [
-                self.sa_session.query(model.Group).get(decode_id(x) if decode_id else x)
-                for x in util.listify(params.in_groups)
+                self.sa_session.get(Group, decode_id(x) if decode_id else x) for x in util.listify(params.in_groups)
             ]
             if None in in_users:
                 raise ActionInputError("One or more invalid user id has been provided.")
@@ -92,7 +99,10 @@ class QuotaManager:
                 gqa = model.GroupQuotaAssociation(group, quota)
                 self.sa_session.add(gqa)
             message = f"Quota '{quota.name}' has been created with {len(in_users)} associated users and {len(in_groups)} associated groups."
-        self.sa_session.flush()
+
+        with transaction(self.sa_session):
+            self.sa_session.commit()
+
         return quota, message
 
     def _parse_amount(self, amount: str) -> Optional[Union[int, bool]]:
@@ -104,12 +114,10 @@ class QuotaManager:
             return False
 
     def rename_quota(self, quota, params) -> str:
+        stmt = select(Quota).where(Quota.name == params.name).limit(1)
         if not params.name:
             raise ActionInputError("Enter a valid name.")
-        elif (
-            params.name != quota.name
-            and self.sa_session.query(model.Quota).filter(model.Quota.name == params.name).first()
-        ):
+        elif params.name != quota.name and self.sa_session.scalars(stmt).first():
             raise ActionInputError("A quota with that name already exists.")
         else:
             old_name = quota.name
@@ -117,7 +125,8 @@ class QuotaManager:
             if params.description:
                 quota.description = params.description
             self.sa_session.add(quota)
-            self.sa_session.flush()
+            with transaction(self.sa_session):
+                self.sa_session.commit()
             message = f"Quota '{old_name}' has been renamed to '{params.name}'."
             return message
 
@@ -126,13 +135,12 @@ class QuotaManager:
             raise ActionInputError("Default quotas cannot be associated with specific users and groups.")
         else:
             in_users = [
-                self.sa_session.query(model.User).get(decode_id(x) if decode_id else x)
-                for x in util.listify(params.in_users)
+                self.sa_session.get(model.User, decode_id(x) if decode_id else x) for x in util.listify(params.in_users)
             ]
             if None in in_users:
                 raise ActionInputError("One or more invalid user id has been provided.")
             in_groups = [
-                self.sa_session.query(model.Group).get(decode_id(x) if decode_id else x)
+                self.sa_session.get(model.Group, decode_id(x) if decode_id else x)
                 for x in util.listify(params.in_groups)
             ]
             if None in in_groups:
@@ -160,7 +168,8 @@ class QuotaManager:
             quota.amount = new_amount
             quota.operation = params.operation
             self.sa_session.add(quota)
-            self.sa_session.flush()
+            with transaction(self.sa_session):
+                self.sa_session.commit()
             message = f"Quota '{quota.name}' is now '{quota.operation}{quota.display_amount}'."
             return message
 
@@ -176,7 +185,8 @@ class QuotaManager:
                     message = f"Quota '{quota.name}' is no longer the default for {quota.default[0].type} users."
                     for dqa in quota.default:
                         self.sa_session.delete(dqa)
-                    self.sa_session.flush()
+                    with transaction(self.sa_session):
+                        self.sa_session.commit()
                 else:
                     message = f"Quota '{quota.name}' is not a default."
             return message
@@ -188,7 +198,8 @@ class QuotaManager:
             message = f"Quota '{quota.name}' is no longer the default for {quota.default[0].type} users."
             for dqa in quota.default:
                 self.sa_session.delete(dqa)
-            self.sa_session.flush()
+            with transaction(self.sa_session):
+                self.sa_session.commit()
             return message
 
     def delete_quota(self, quota, params=None) -> str:
@@ -208,7 +219,8 @@ class QuotaManager:
             q.deleted = True
             self.sa_session.add(q)
             names.append(q.name)
-        self.sa_session.flush()
+        with transaction(self.sa_session):
+            self.sa_session.commit()
         message += ", ".join(names)
         return message
 
@@ -227,7 +239,8 @@ class QuotaManager:
             q.deleted = False
             self.sa_session.add(q)
             names.append(q.name)
-        self.sa_session.flush()
+        with transaction(self.sa_session):
+            self.sa_session.commit()
         message += ", ".join(names)
         return message
 
@@ -256,7 +269,8 @@ class QuotaManager:
             for gqa in q.groups:
                 self.sa_session.delete(gqa)
             names.append(q.name)
-        self.sa_session.flush()
+        with transaction(self.sa_session):
+            self.sa_session.commit()
         message += ", ".join(names)
         return message
 

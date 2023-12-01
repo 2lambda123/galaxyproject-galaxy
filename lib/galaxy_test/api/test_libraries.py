@@ -48,6 +48,12 @@ class TestLibrariesApi(ApiTestCase):
         assert ld
 
     @requires_new_library
+    def test_index(self):
+        self.library_populator.new_library("TestIndexLibraries")
+        libraries = self.library_populator.get_libraries()
+        assert len(libraries) > 0
+
+    @requires_new_library
     def test_delete(self):
         library = self.library_populator.new_library("DeleteTestLibrary")
         create_response = self._delete(f"libraries/{library['id']}", admin=True)
@@ -452,7 +458,7 @@ class TestLibrariesApi(ApiTestCase):
         data = {"tags": ["#Lancelot", "name:Holy Grail", "blue"]}
         ld_updated = self._patch_library_dataset(ld["id"], data)
         self._assert_has_keys(ld_updated, "tags")
-        assert ld_updated["tags"] == "name:Lancelot, name:HolyGrail, blue"
+        assert ld_updated["tags"] == ["name:Lancelot", "name:HolyGrail", "blue"]
 
     @requires_new_library
     def test_invalid_update_dataset_in_folder(self):

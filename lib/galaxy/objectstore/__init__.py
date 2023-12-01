@@ -18,19 +18,16 @@ from typing import (
     List,
     NamedTuple,
     Optional,
-    Set,
     Tuple,
     Type,
+    TYPE_CHECKING,
 )
 
 import yaml
 from pydantic import BaseModel
-from typing_extensions import (
-    Literal,
-    TypedDict,
-)
 
 from galaxy.exceptions import (
+    MalformedContents,
     ObjectInvalid,
     ObjectNotFound,
 )
@@ -38,6 +35,7 @@ from galaxy.util import (
     asbool,
     directory_hash_id,
     force_symlink,
+    in_directory,
     parse_xml,
     umask_fix_perms,
 )
@@ -45,8 +43,19 @@ from galaxy.util.bunch import Bunch
 from galaxy.util.path import (
     safe_makedirs,
     safe_relpath,
+    safe_walk,
 )
 from galaxy.util.sleeper import Sleeper
+from .badges import (
+    BadgeDict,
+    read_badges,
+    serialize_badges,
+    StoredBadgeDict,
+)
+from .caching import CacheTarget
+
+if TYPE_CHECKING:
+    from galaxy.model import DatasetInstance
 
 NO_SESSION_ERROR_MESSAGE = (
     "Attempted to 'create' object store entity in configuration with no database session present."
@@ -56,44 +65,6 @@ DEFAULT_QUOTA_SOURCE = None  # Just track quota right on user object in Galaxy.
 DEFAULT_QUOTA_ENABLED = True  # enable quota tracking in object stores by default
 
 log = logging.getLogger(__name__)
-
-BadgeSourceT = Literal["admin", "galaxy"]
-BadgeT = Literal[
-    "faster",
-    "slower",
-    "short_term",
-    "cloud",
-    "backed_up",
-    "not_backed_up",
-    "more_secure",
-    "less_secure",
-    "more_stable",
-    "less_stable",
-    "quota",
-    "no_quota",
-    "restricted",
-]
-
-BADGE_SPECIFICATION = [
-    {"type": "faster", "conflicts": ["slower"]},
-    {"type": "slower", "conflicts": ["faster"]},
-    {"type": "short_term", "conflicts": []},
-    {"type": "cloud", "conflicts": []},
-    {"type": "backed_up", "conflicts": ["not_backed_up"]},
-    {"type": "not_backed_up", "conflicts": ["backed_up"]},
-    {"type": "more_secure", "conflicts": ["less_secure"]},
-    {"type": "less_secure", "conflicts": ["more_secure"]},
-    {"type": "more_stable", "conflicts": ["less_stable"]},
-    {"type": "less_stable", "conflicts": ["more_stable"]},
-]
-KNOWN_BADGE_TYPES = [s["type"] for s in BADGE_SPECIFICATION]
-BADGE_SPECIFCATION_BY_TYPE = {s["type"]: s for s in BADGE_SPECIFICATION}
-
-
-class BadgeDict(TypedDict):
-    type: BadgeT
-    message: Optional[str]
-    source: BadgeSourceT
 
 
 class ObjectStore(metaclass=abc.ABCMeta):
@@ -146,6 +117,12 @@ class ObjectStore(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    def construct_path(
+        self, obj, base_dir=None, dir_only=False, extra_dir=None, extra_dir_at_root=False, alt_name=None
+    ):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     def create(
         self, obj, base_dir=None, dir_only=False, extra_dir=None, extra_dir_at_root=False, alt_name=None, obj_dir=False
     ):
@@ -170,7 +147,7 @@ class ObjectStore(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def size(self, obj, extra_dir=None, extra_dir_at_root=False, alt_name=None, obj_dir=False):
+    def size(self, obj, extra_dir=None, extra_dir_at_root=False, alt_name=None, obj_dir=False) -> int:
         """
         Return size of the object identified by `obj`.
 
@@ -247,6 +224,7 @@ class ObjectStore(metaclass=abc.ABCMeta):
         obj_dir=False,
         file_name=None,
         create=False,
+        preserve_symlinks=False,
     ):
         """
         Inform the store that the file associated with `obj.id` has been updated.
@@ -339,8 +317,13 @@ class ObjectStore(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    def cache_targets(self) -> List[CacheTarget]:
+        """Return a list of CacheTargets used by this object store."""
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     def to_dict(self) -> Dict[str, Any]:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def get_quota_source_map(self):
@@ -440,6 +423,9 @@ class BaseObjectStore(ObjectStore):
     def exists(self, obj, **kwargs):
         return self._invoke("exists", obj, **kwargs)
 
+    def construct_path(self, obj, **kwargs):
+        return self._invoke("construct_path", obj, **kwargs)
+
     def create(self, obj, **kwargs):
         return self._invoke("create", obj, **kwargs)
 
@@ -482,6 +468,9 @@ class BaseObjectStore(ObjectStore):
     def is_private(self, obj):
         return self._invoke("is_private", obj)
 
+    def cache_targets(self) -> List[CacheTarget]:
+        return []
+
     @classmethod
     def parse_private_from_config_xml(clazz, config_xml):
         private = DEFAULT_PRIVATE
@@ -511,6 +500,8 @@ class ConcreteObjectStore(BaseObjectStore):
     persisted, not how a file is routed to a persistence source.
     """
 
+    badges: List[StoredBadgeDict]
+
     def __init__(self, config, config_dict=None, **kwargs):
         """
         :type config: object
@@ -537,31 +528,7 @@ class ConcreteObjectStore(BaseObjectStore):
         quota_config = config_dict.get("quota", {})
         self.quota_source = quota_config.get("source", DEFAULT_QUOTA_SOURCE)
         self.quota_enabled = quota_config.get("enabled", DEFAULT_QUOTA_ENABLED)
-        raw_badges = config_dict.get("badges", [])
-        badges = []
-        badge_types: Set[str] = set()
-        badge_conflicts: Dict[str, str] = {}
-        for badge in raw_badges:
-            # when recovering serialized badges, skip ones that are set by Galaxy
-            badge_source = badge.get("source")
-            if badge_source and badge_source != "admin":
-                continue
-            assert "type" in badge
-            badge_type = badge["type"]
-            if badge_type not in KNOWN_BADGE_TYPES:
-                raise Exception(f"badge_type {badge_type} unimplemented/unknown {badge}")
-            message = badge.get("message", None)
-            badges.append({"type": badge_type, "message": message})
-            badge_types.add(badge_type)
-            if badge_type in badge_conflicts:
-                conflicting_badge_type = badge_conflicts[badge_type]
-                raise Exception(
-                    f"Conflicting badge to [{badge_type}] defined on the object store [{conflicting_badge_type}]."
-                )
-            conflicts = BADGE_SPECIFCATION_BY_TYPE[badge_type]["conflicts"]
-            for conflict in conflicts:
-                badge_conflicts[conflict] = badge_type
-        self.badges = badges
+        self.badges = read_badges(config_dict)
 
     def to_dict(self):
         rval = super().to_dict()
@@ -587,37 +554,11 @@ class ConcreteObjectStore(BaseObjectStore):
         )
 
     def _get_concrete_store_badges(self, obj) -> List[BadgeDict]:
-        badge_dicts: List[BadgeDict] = []
-        for badge in self.badges:
-            badge_dict: BadgeDict = {
-                "source": "admin",
-                "type": badge["type"],
-                "message": badge["message"],
-            }
-            badge_dicts.append(badge_dict)
-
-        quota_badge_dict: BadgeDict
-        if self.galaxy_enable_quotas and self.quota_enabled:
-            quota_badge_dict = {
-                "type": "quota",
-                "message": None,
-                "source": "galaxy",
-            }
-        else:
-            quota_badge_dict = {
-                "type": "no_quota",
-                "message": None,
-                "source": "galaxy",
-            }
-        badge_dicts.append(quota_badge_dict)
-        if self.private:
-            restricted_badge_dict: BadgeDict = {
-                "type": "restricted",
-                "message": None,
-                "source": "galaxy",
-            }
-            badge_dicts.append(restricted_badge_dict)
-        return badge_dicts
+        return serialize_badges(
+            self.badges,
+            self.galaxy_enable_quotas and self.quota_enabled,
+            self.private,
+        )
 
     def _get_concrete_store_name(self, obj):
         return self.name
@@ -630,6 +571,14 @@ class ConcreteObjectStore(BaseObjectStore):
 
     def _is_private(self, obj):
         return self.private
+
+    @property
+    def cache_target(self) -> Optional[CacheTarget]:
+        return None
+
+    def cache_targets(self) -> List[CacheTarget]:
+        cache_target = self.cache_target
+        return [cache_target] if cache_target is not None else []
 
     def get_quota_source_map(self):
         quota_source_map = QuotaSourceMap(
@@ -850,7 +799,7 @@ class DiskObjectStore(ConcreteObjectStore):
         """Override `ObjectStore`'s stub by checking file size on disk."""
         return self.size(obj, **kwargs) == 0
 
-    def _size(self, obj, **kwargs):
+    def _size(self, obj, **kwargs) -> int:
         """Override `ObjectStore`'s stub by return file size on disk.
 
         Returns 0 if the object doesn't exist yet or other error.
@@ -984,6 +933,13 @@ class NestedObjectStore(BaseObjectStore):
         objectstore = random.choice(list(self.backends.values()))
         return objectstore.create(obj, **kwargs)
 
+    def cache_targets(self) -> List[CacheTarget]:
+        cache_targets = []
+        for backend in self.backends.values():
+            cache_targets.extend(backend.cache_targets())
+        # TODO: merge more intelligently - de-duplicate paths and handle conflicting sizes/percents
+        return cache_targets
+
     def _empty(self, obj, **kwargs):
         """For the first backend that has this `obj`, determine if it is empty."""
         return self._call_method("_empty", obj, True, False, **kwargs)
@@ -1045,8 +1001,7 @@ class NestedObjectStore(BaseObjectStore):
                 return store.__getattribute__(method)(obj, **kwargs)
         if default_is_exception:
             raise default(
-                "objectstore, _call_method failed: %s on %s, kwargs: %s"
-                % (method, self._repr_object_for_exception(obj), str(kwargs))
+                f"objectstore, _call_method failed: {method} on {self._repr_object_for_exception(obj)}, kwargs: {kwargs}"
             )
         else:
             return default
@@ -1206,6 +1161,9 @@ class DistributedObjectStore(NestedObjectStore):
             self.weighted_backend_ids = new_weighted_backend_ids
             sleeper.sleep(120)  # Test free space every 2 minutes
 
+    def _construct_path(self, obj, **kwargs):
+        return self.backends[obj.object_store_id].construct_path(obj, **kwargs)
+
     def _create(self, obj, **kwargs):
         """The only method in which obj.object_store_id may be None."""
         object_store_id = obj.object_store_id
@@ -1223,8 +1181,10 @@ class DistributedObjectStore(NestedObjectStore):
                 )
             else:
                 log.debug(
-                    "Using preferred backend '%s' for creation of %s %s"
-                    % (object_store_id, obj.__class__.__name__, obj.id)
+                    "Using preferred backend '%s' for creation of %s %s",
+                    object_store_id,
+                    obj.__class__.__name__,
+                    obj.id,
                 )
             return self.backends[object_store_id].create(obj, **kwargs)
         else:
@@ -1236,8 +1196,7 @@ class DistributedObjectStore(NestedObjectStore):
             return self.backends[object_store_id].__getattribute__(method)(obj, **kwargs)
         if default_is_exception:
             raise default(
-                "objectstore, _call_method failed: %s on %s, kwargs: %s"
-                % (method, self._repr_object_for_exception(obj), str(kwargs))
+                f"objectstore, _call_method failed: {method} on {self._repr_object_for_exception(obj)}, kwargs: {kwargs}"
             )
         else:
             return default
@@ -1263,8 +1222,10 @@ class DistributedObjectStore(NestedObjectStore):
                 return obj.object_store_id
             else:
                 log.warning(
-                    "The backend object store ID (%s) for %s object with ID %s is invalid"
-                    % (obj.object_store_id, obj.__class__.__name__, obj.id)
+                    "The backend object store ID (%s) for %s object with ID %s is invalid",
+                    obj.object_store_id,
+                    obj.__class__.__name__,
+                    obj.id,
                 )
         elif self.search_for_missing:
             # if this instance has been switched from a non-distributed to a
@@ -1370,6 +1331,9 @@ class HierarchicalObjectStore(NestedObjectStore):
                 return True
         return False
 
+    def _construct_path(self, obj, **kwargs):
+        return self.backends[0].construct_path(obj, **kwargs)
+
     def _create(self, obj, **kwargs):
         """Call the primary object store."""
         return self.backends[0].create(obj, **kwargs)
@@ -1407,7 +1371,7 @@ def type_to_object_store_class(store: str, fsmon: bool = False) -> Tuple[Type[Ba
     objectstore_constructor_kwds = {}
     if store == "disk":
         objectstore_class = DiskObjectStore
-    elif store == "s3":
+    elif store in ["s3", "aws_s3"]:
         from .s3 import S3ObjectStore
 
         objectstore_class = S3ObjectStore
@@ -1415,10 +1379,10 @@ def type_to_object_store_class(store: str, fsmon: bool = False) -> Tuple[Type[Ba
         from .cloud import Cloud
 
         objectstore_class = Cloud
-    elif store == "swift":
-        from .s3 import SwiftObjectStore
+    elif store in ["swift", "generic_s3"]:
+        from .s3 import GenericS3ObjectStore
 
-        objectstore_class = SwiftObjectStore
+        objectstore_class = GenericS3ObjectStore
     elif store == "distributed":
         objectstore_class = DistributedObjectStore
         objectstore_constructor_kwds["fsmon"] = fsmon
@@ -1447,7 +1411,9 @@ def type_to_object_store_class(store: str, fsmon: bool = False) -> Tuple[Type[Ba
     return objectstore_class, objectstore_constructor_kwds
 
 
-def build_object_store_from_config(config, fsmon=False, config_xml=None, config_dict=None):
+def build_object_store_from_config(
+    config, fsmon=False, config_xml=None, config_dict=None, disable_process_management=False
+):
     """
     Invoke the appropriate object store.
 
@@ -1461,8 +1427,8 @@ def build_object_store_from_config(config, fsmon=False, config_xml=None, config_
     from_object = "xml"
 
     if config is None and config_dict is not None and "config" in config_dict:
-        # Build a config object from to_dict of an ObjectStore.
-        config = Bunch(**config_dict["config"])
+        # Build an application config object from to_dict of an ObjectStore.
+        config = Bunch(disable_process_management=disable_process_management, **config_dict["config"])
     elif config is None:
         raise Exception(
             "build_object_store_from_config sent None as config parameter and one cannot be recovered from config_dict"
@@ -1513,29 +1479,6 @@ def local_extra_dirs(func):
             )
 
     return wraps
-
-
-def convert_bytes(bytes):
-    """A helper function used for pretty printing disk usage."""
-    if bytes is None:
-        bytes = 0
-    bytes = float(bytes)
-
-    if bytes >= 1099511627776:
-        terabytes = bytes / 1099511627776
-        size = f"{terabytes:.2f}TB"
-    elif bytes >= 1073741824:
-        gigabytes = bytes / 1073741824
-        size = f"{gigabytes:.2f}GB"
-    elif bytes >= 1048576:
-        megabytes = bytes / 1048576
-        size = f"{megabytes:.2f}MB"
-    elif bytes >= 1024:
-        kilobytes = bytes / 1024
-        size = f"{kilobytes:.2f}KB"
-    else:
-        size = f"{bytes:.2f}b"
-    return size
 
 
 def config_to_dict(config):
@@ -1642,3 +1585,31 @@ class ObjectStorePopulator:
         except ObjectInvalid:
             raise Exception("Unable to create output dataset: object store is full")
         self.object_store_id = dataset.object_store_id  # these will be the same thing after the first output
+
+
+def persist_extra_files(
+    object_store: ObjectStore,
+    src_extra_files_path: str,
+    primary_data: "DatasetInstance",
+    extra_files_path_name: Optional[str] = None,
+) -> None:
+    if os.path.exists(src_extra_files_path):
+        assert primary_data.dataset
+        if not extra_files_path_name:
+            extra_files_path_name = primary_data.dataset.extra_files_path_name_from(object_store)
+        assert extra_files_path_name
+        for root, _dirs, files in safe_walk(src_extra_files_path):
+            extra_dir = os.path.join(extra_files_path_name, os.path.relpath(root, src_extra_files_path))
+            extra_dir = os.path.normpath(extra_dir)
+            for f in files:
+                if not in_directory(f, src_extra_files_path):
+                    # Unclear if this can ever happen if we use safe_walk ... probably not ?
+                    raise MalformedContents(f"Invalid dataset path: {f}")
+                object_store.update_from_file(
+                    primary_data.dataset,
+                    extra_dir=extra_dir,
+                    alt_name=f,
+                    file_name=os.path.join(root, f),
+                    create=True,
+                    preserve_symlinks=True,
+                )

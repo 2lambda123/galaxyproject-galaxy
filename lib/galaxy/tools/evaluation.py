@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 import shlex
 import string
 import tempfile
@@ -15,6 +16,7 @@ from typing import (
 )
 
 from galaxy import model
+from galaxy.authnz.util import provider_name_to_backend
 from galaxy.job_execution.compute_environment import ComputeEnvironment
 from galaxy.job_execution.setup import ensure_configs_directory
 from galaxy.model.deferred import (
@@ -59,7 +61,11 @@ from galaxy.util import (
     safe_makedirs,
     unicodify,
 )
-from galaxy.util.template import fill_template
+from galaxy.util.template import (
+    fill_template,
+    InputNotFoundSyntaxError,
+)
+from galaxy.util.tree_dict import TreeDict
 from galaxy.work.context import WorkRequestContext
 
 log = logging.getLogger(__name__)
@@ -181,17 +187,11 @@ class ToolEvaluator:
         compute_environment = self.compute_environment
         job_working_directory = compute_environment.working_directory()
 
-        param_dict = self.param_dict
+        param_dict = TreeDict(self.param_dict)
 
-        def input():
-            raise SyntaxError("Unbound variable input.")  # Don't let $input hang Python evaluation process.
-
-        param_dict["input"] = input
         param_dict["__datatypes_config__"] = param_dict["GALAXY_DATATYPES_CONF_FILE"] = os.path.join(
             job_working_directory, "registry.xml"
         )
-        if self.job.tool_id == "upload1":
-            param_dict["paramfile"] = os.path.join(job_working_directory, "upload_params.json")
         if self._history:
             param_dict["__history_id__"] = self.app.security.encode_id(self._history.id)
         param_dict["__galaxy_url__"] = self.compute_environment.galaxy_url()
@@ -209,8 +209,22 @@ class ToolEvaluator:
         # Parameters added after this line are not sanitized
         self.__populate_non_job_params(param_dict)
 
-        # Return the dictionary of parameters
-        return param_dict
+        # MinimalJobWrapper.__prepare_upload_paramfile copies the paramfile to the job working directory
+        # so we should use it (otherwise the upload tool does not work in real user setups)
+        if self.job.tool_id == "upload1":
+            param_dict["paramfile"] = os.path.join(job_working_directory, "upload_params.json")
+
+        if "input" not in param_dict.data:
+
+            def input():
+                raise InputNotFoundSyntaxError(
+                    "Unbound variable 'input'."
+                )  # Don't let $input hang Python evaluation process.
+
+            param_dict.data["input"] = input
+
+        # Return the dictionary of parameters without injected parameters
+        return param_dict.clean_copy()
 
     def _materialize_objects(
         self, deferred_objects: Dict[str, DeferrableObjectsT], job_working_directory: str
@@ -257,7 +271,9 @@ class ToolEvaluator:
         visit_input_values(self.tool.inputs, incoming, replace_deferred)
 
     def _validate_incoming(self, incoming: dict):
-        request_context = WorkRequestContext(app=self.app, user=self._user, history=self._history)
+        request_context = WorkRequestContext(
+            app=self.app, user=self._user, history=self._history, galaxy_session=self.job.galaxy_session
+        )
 
         def validate_inputs(input, value, context, **kwargs):
             value = input.from_json(value, request_context, context)
@@ -443,12 +459,6 @@ class ToolEvaluator:
             if not os.path.exists(output_path) and os.path.exists(os.path.dirname(output_path)):
                 open(output_path, "w").close()
 
-            # Provide access to a path to store additional files
-            # TODO: move compute path logic into compute environment, move setting files_path
-            # logic into DatasetFilenameWrapper. Currently this sits in the middle and glues
-            # stuff together inconsistently with the way the rest of path rewriting works.
-            file_name = hda.dataset.extra_files_path_name
-            param_dict[name].files_path = os.path.abspath(os.path.join(job_working_directory, "working", file_name))
         for out_name, output in self.tool.outputs.items():
             if out_name not in param_dict and output.filters:
                 # Assume the reason we lack this output is because a filter
@@ -511,7 +521,15 @@ class ToolEvaluator:
         it = []
         for ep in getattr(self.tool, "ports", []):
             ep_dict = {}
-            for key in "port", "name", "url", "requires_domain":
+            for key in (
+                "port",
+                "name",
+                "label",
+                "url",
+                "requires_domain",
+                "requires_path_in_url",
+                "requires_path_in_header_named",
+            ):
                 val = ep.get(key, None)
                 if val is not None and not isinstance(val, bool):
                     val = fill_template(
@@ -595,8 +613,7 @@ class ToolEvaluator:
         self.command_line = command_line
 
     def _build_version_command(self):
-        version_string_cmd_raw = self.tool.version_string_cmd
-        if version_string_cmd_raw:
+        if version_string_cmd_raw := self.tool.version_string_cmd:
             version_command_template = string.Template(version_string_cmd_raw)
             version_command = version_command_template.safe_substitute(
                 {"__tool_directory__": self.compute_environment.tool_directory()}
@@ -641,6 +658,21 @@ class ToolEvaluator:
                 else:
                     environment_variable_template = ""
                 is_template = False
+            elif inject and inject.startswith("oidc_"):
+                environment_variable_template = self.get_oidc_token(inject)
+                is_template = False
+            elif inject and inject == "entry_point_path_for_label" and environment_variable_template:
+                from galaxy.managers.interactivetool import InteractiveToolManager
+
+                entry_point_label = environment_variable_template
+                matching_eps = [ep for ep in self.job.interactivetool_entry_points if ep.label == entry_point_label]
+                if matching_eps:
+                    entry_point = matching_eps[0]
+                    entry_point_path = InteractiveToolManager(self.app).get_entry_point_path(self.app, entry_point)
+                    environment_variable_template = entry_point_path.rstrip("/")
+                else:
+                    environment_variable_template = ""
+                is_template = False
             else:
                 is_template = True
             with tempfile.NamedTemporaryFile(dir=directory, prefix="tool_env_", delete=False) as temp:
@@ -661,15 +693,31 @@ class ToolEvaluator:
             environment_variable["job_directory_path"] = config_filename
             environment_variables.append(environment_variable)
 
-        home_dir = self.compute_environment.home_directory()
-        tmp_dir = self.compute_environment.tmp_directory()
-        if home_dir:
+        if home_dir := self.compute_environment.home_directory():
             environment_variable = dict(name="HOME", value=f'"{home_dir}"', raw=True)
             environment_variables.append(environment_variable)
-        if tmp_dir:
+        if tmp_dir := self.compute_environment.tmp_directory():
             for tmp_directory_var in self.tool.tmp_directory_vars:
                 environment_variable = dict(name=tmp_directory_var, value=f'"{tmp_dir}"', raw=True)
                 environment_variables.append(environment_variable)
+
+    def get_oidc_token(self, inject):
+        if not self._user:
+            return "token-unavailable"
+
+        p = re.compile("^oidc_(id|access|refresh)_token_(.*)$")
+        match = p.match(inject)
+        provider_backend = None
+        if match:
+            token_type = match.group(1)
+            provider_backend = provider_name_to_backend(match.group(2))
+        if not match or not provider_backend:
+            return "token-unavailable"
+
+        tokens = self._user.get_oidc_tokens(provider_backend)
+        environment_variable_template = tokens[token_type] or "token-unavailable"
+
+        return environment_variable_template
 
     def _build_param_file(self):
         """
@@ -755,8 +803,7 @@ class ToolEvaluator:
 
     @property
     def _user(self):
-        history = self._history
-        if history:
+        if history := self._history:
             return history.user
         else:
             return self.job.user

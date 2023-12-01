@@ -1,3 +1,32 @@
+<script setup lang="ts">
+import { ref } from "vue";
+
+import SelectObjectStore from "@/components/ObjectStore/SelectObjectStore.vue";
+
+interface Props {
+    invocationPreferredObjectStoreId?: String | null;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+    invocationPreferredObjectStoreId: null,
+});
+
+const emit = defineEmits<{
+    (e: "updated", id: string | null): void;
+}>();
+
+const selectedObjectStoreId = ref<String | null>(props.invocationPreferredObjectStoreId);
+const newDatasetsDescription = "The default object store for the outputs of this workflow invocation";
+const defaultOptionTitle = "Use Defaults";
+const defaultOptionDescription =
+    "If the history has a default set, that will be used. If instead, you've set an option in your user preferences - that will be assumed to be your default selection. Finally, the Galaxy configuration will be used.";
+
+async function handleSubmit(preferredObjectStoreId: string | null) {
+    selectedObjectStoreId.value = preferredObjectStoreId;
+    emit("updated", preferredObjectStoreId);
+}
+</script>
+
 <template>
     <SelectObjectStore
         :for-what="newDatasetsDescription"
@@ -6,38 +35,3 @@
         :default-option-description="defaultOptionDescription"
         @onSubmit="handleSubmit" />
 </template>
-<script>
-import SelectObjectStore from "components/ObjectStore/SelectObjectStore";
-
-export default {
-    components: {
-        SelectObjectStore,
-    },
-    props: {
-        invocationPreferredObjectStoreId: {
-            type: String,
-            default: null,
-        },
-    },
-    data() {
-        return {
-            selectedObjectStoreId: this.invocationPreferredObjectStoreId,
-            newDatasetsDescription: "The default object store for the outputs of this workflow invocation",
-        };
-    },
-    computed: {
-        defaultOptionTitle() {
-            return "Use Defaults";
-        },
-        defaultOptionDescription() {
-            return "If the history has a default set, that will be used. If instead, you've set an option in your user preferences - that will be assumed to be your default selection. Finally, the Galaxy configuration will be used.";
-        },
-    },
-    methods: {
-        async handleSubmit(preferredObjectStoreId) {
-            this.selectedObjectStoreId = preferredObjectStoreId;
-            this.$emit("updated", preferredObjectStoreId);
-        },
-    },
-};
-</script>

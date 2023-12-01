@@ -1,14 +1,13 @@
-import WorkflowRun from "./WorkflowRun.vue";
-import { shallowMount, createLocalVue } from "@vue/test-utils";
-import { mockModule, watchForChange } from "tests/jest/helpers";
-import Vuex from "vuex";
-import { historyStore } from "store/historyStore";
 import { createTestingPinia } from "@pinia/testing";
+import { createLocalVue, shallowMount } from "@vue/test-utils";
 import { PiniaVuePlugin } from "pinia";
-
-import sampleRunData1 from "./testdata/run1.json";
+import { watchForChange } from "tests/jest/helpers";
 
 import { getRunData } from "./services";
+import sampleRunData1 from "./testdata/run1.json";
+
+import WorkflowRun from "./WorkflowRun.vue";
+
 jest.mock("./services");
 
 getRunData.mockImplementation(async () => {
@@ -36,13 +35,7 @@ describe("WorkflowRun.vue", () => {
         const propsData = { workflowId: run1WorkflowId };
         localVue = createLocalVue();
         localVue.use(PiniaVuePlugin);
-        const store = new Vuex.Store({
-            modules: {
-                history: mockModule(historyStore, { currentHistoryId: "fakehistory", histories: { fakehistory: {} } }),
-            },
-        });
         wrapper = shallowMount(WorkflowRun, {
-            store,
             propsData: propsData,
             localVue,
             pinia: createTestingPinia(),
