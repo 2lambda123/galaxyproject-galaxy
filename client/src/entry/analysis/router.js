@@ -66,6 +66,7 @@ import { parseBool } from "@/utils/utils";
 import { patchRouterPush } from "./router-push";
 
 import AboutGalaxy from "@/components/AboutGalaxy.vue";
+import DatatypeConverters from "@/components/DatatypeConverters/DatatypeConverters.vue";
 import HistoryArchive from "@/components/History/Archiving/HistoryArchive.vue";
 import HistoryArchiveWizard from "@/components/History/Archiving/HistoryArchiveWizard.vue";
 import NotificationsList from "@/components/Notifications/NotificationsList.vue";
@@ -567,6 +568,10 @@ export function getRouter(Galaxy) {
                         path: "workflows/:storedWorkflowId/invocations",
                         component: StoredWorkflowInvocations,
                         props: true,
+                    },
+                    {
+                        path: "datatype_converters",
+                        component: DatatypeConverters,
                     },
                 ],
             },
