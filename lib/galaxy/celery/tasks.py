@@ -1,4 +1,7 @@
+import datetime
 import json
+import os
+import shutil
 from concurrent.futures import TimeoutError
 from functools import lru_cache
 from pathlib import Path
@@ -21,6 +24,7 @@ from galaxy.celery import (
 from galaxy.config import GalaxyAppConfiguration
 from galaxy.datatypes import sniff
 from galaxy.datatypes.registry import Registry as DatatypesRegistry
+from galaxy.exceptions import ObjectNotFound
 from galaxy.jobs import MinimalJobWrapper
 from galaxy.managers.collections import DatasetCollectionManager
 from galaxy.managers.datasets import (
@@ -480,3 +484,31 @@ def cleanup_expired_notifications(notification_manager: NotificationManager):
 @galaxy_task(action="prune object store cache directories")
 def clean_object_store_caches(object_store: BaseObjectStore):
     check_caches(object_store.cache_targets())
+
+
+@galaxy_task(action="clean up job working directories")
+def cleanup_jwds(sa_session: galaxy_scoped_session, object_store: BaseObjectStore, days: Optional[int] = 5):
+    """Cleanup job working directories for failed jobs that are older than X days"""
+
+    def get_failed_jobs():
+        return sa_session.query(model.Job.id).filter(
+            model.Job.state == "error",
+            model.Job.update_time > datetime.datetime.now() - datetime.timedelta(days=days),
+            model.Job.object_store_id is not None,
+        )
+
+    def delete_jwd(job):
+        try:
+            # Get job working directory from object store
+            path = object_store.get_filename(job, base_dir="job_work", dir_only=True, obj_dir=True)
+            shutil.rmtree(path)
+        except ObjectNotFound:
+            # job working directory already deleted
+            pass
+        except OSError as e:
+            log.error(f"Error deleting job working directory: {path} : {e.strerror}")
+
+    failed_jobs = get_failed_jobs()
+
+    if not failed_jobs:
+        log.info("No failed jobs found within the last %s days", days)
