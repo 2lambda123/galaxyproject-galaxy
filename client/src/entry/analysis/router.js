@@ -321,6 +321,7 @@ export function getRouter(Galaxy) {
                         path: "histories/:historyId/invocations",
                         component: HistoryInvocations,
                         props: true,
+                        redirect: redirectAnon(),
                     },
                     {
                         path: "interactivetool_entry_points/list",
