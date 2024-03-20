@@ -19,15 +19,6 @@
                         :dataset="dataset"
                         :job-details="jobDetails"
                         :notifications="buildNotifications(jobDetails.tool_id)" />
-                    <!-- <SelfReportingError
-                        :result-messages="resultMessages"
-                        :show-form="showForm"
-                        :current-user="currentUser"
-                        :message="message"
-                        :submit="submit"
-                        :dataset="dataset"
-                        :job-details="jobDetails"
-                        :notifications="buildNotifications(jobDetails.tool_id)" /> -->
                 </div>
             </JobDetailsProvider>
         </DatasetProvider>
