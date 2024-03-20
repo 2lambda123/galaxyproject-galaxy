@@ -20,7 +20,8 @@
                         :message="message"
                         :submit="submit"
                         :dataset="dataset"
-                        :job-details="jobDetails" />
+                        :job-details="jobDetails"
+                        :notifications="buildNotifications(jobDetails.tool_id)" />
                 </div>
             </JobDetailsProvider>
         </DatasetProvider>
@@ -78,6 +79,13 @@ export default {
     methods: {
         onError(err) {
             this.errorMessage = err;
+        },
+        buildNotifications(toolId) {
+            return [
+                {
+                    text: `An error occurred while running the tool <b id='dataset-error-tool-id' class='text-break  '>${toolId}</b>.`,
+                },
+            ];
         },
         submit(dataset, userEmailJob) {
             const email = userEmailJob || this.currentUserEmail;

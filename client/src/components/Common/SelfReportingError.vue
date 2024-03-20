@@ -4,11 +4,12 @@
             <div class="response-message"></div>
         </div>
         <h3 class="h-lg">Dataset Error Report</h3>
-        <p>
-            An error occurred while running the tool
-            <b id="dataset-error-tool-id" class="text-break">{{ jobDetails.tool_id }}</b
-            >.
-        </p>
+        <p v-if="notifications && !notifications.variant" v-html="notifications[0].text" />
+        <span v-else-if="notifications && notifications.variant">
+            <BAlert :variant="notifications.variant">
+                <span v-html="notifications[0].text" />
+            </BAlert>
+        </span>
         <DatasetErrorDetails
             :tool-stderr="jobDetails.tool_stderr"
             :job-stderr="jobDetails.job_stderr"
@@ -40,9 +41,9 @@
             </b>
         </p>
         <h4 class="mb-3 h-md">Issue Report</h4>
-        <b-alert v-for="(resultMessage, index) in resultMessages" :key="index" :variant="resultMessage[1]" show>
+        <BAlert v-for="(resultMessage, index) in resultMessages" :key="index" :variant="resultMessage[1]" show>
             <span v-html="renderMarkdown(resultMessage[0])"></span>
-        </b-alert>
+        </BAlert>
         <div v-if="showForm" id="fieldsAndButton">
             <span class="mr-2 font-weight-bold">{{ emailTitle }}</span>
             <span v-if="!!currentUser?.email">{{ currentUser?.email }}</span>
@@ -65,6 +66,7 @@
 
 <script>
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+import { BAlert } from "bootstrap-vue";
 import FormElement from "components/Form/FormElement";
 import { JobProblemProvider } from "components/providers/JobProvider";
 import { mapState } from "pinia";
@@ -81,6 +83,7 @@ export default {
         FontAwesomeIcon,
         FormElement,
         JobProblemProvider,
+        BAlert,
     },
     props: {
         jobDetails: {
@@ -90,6 +93,10 @@ export default {
         dataset: {
             type: Object,
             required: true,
+        },
+        notifications: {
+            type: Array,
+            default: () => [],
         },
     },
     setup() {
