@@ -45,7 +45,7 @@
             <span v-html="renderMarkdown(resultMessage[0])"></span>
         </BAlert>
         <div v-if="showForm" id="fieldsAndButton">
-            <span class="mr-2 font-weight-bold">{{ emailTitle }}</span>
+            <span class="mr-2 font-weight-bold">{{ "Your email address" | l }}</span>
             <span v-if="!!currentUser?.email">{{ currentUser?.email }}</span>
             <span v-else>{{ "You must be logged in to receive emails" | l }}</span>
             <FormElement
@@ -57,7 +57,8 @@
                 id="dataset-error-submit"
                 variant="primary"
                 class="mt-3"
-                @click="submit(dataset, jobDetails.user_email)">
+                :disabled="disableSubmit"
+                @click="submit(dataset, currentUser?.email)">
                 <FontAwesomeIcon icon="bug" class="mr-1" />Report
             </b-button>
         </div>
@@ -71,6 +72,7 @@ import FormElement from "components/Form/FormElement";
 import { JobProblemProvider } from "components/providers/JobProvider";
 import { mapState } from "pinia";
 
+import { getGalaxyInstance } from "@/app";
 import { useMarkdown } from "@/composables/markdown";
 import { useUserStore } from "@/stores/userStore";
 
@@ -108,7 +110,6 @@ export default {
             message: null,
             errorMessage: null,
             resultMessages: [],
-            emailTitle: this.l("Your email address"),
         };
     },
     computed: {
@@ -118,15 +119,17 @@ export default {
             const hasError = this.resultMessages.some((msg) => msg[1] === "danger");
             return noResult || hasError;
         },
+        disableSubmit() {
+            const isEmailActive = !getGalaxyInstance().config.show_inactivity_warning;
+            return !this.currentUser?.email || !isEmailActive;
+        },
     },
     methods: {
         onError(err) {
             this.errorMessage = err;
         },
-        submit(dataset, userEmailJob) {
-            const email = userEmailJob || this.currentUserEmail;
-            const message = this.message;
-            sendErrorReport(dataset, message, email).then(
+        submit(dataset, email) {
+            sendErrorReport(dataset, this.message, email).then(
                 (resultMessages) => {
                     this.resultMessages = resultMessages;
                 },

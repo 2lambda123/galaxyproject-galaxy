@@ -14,14 +14,20 @@
                     <SelfReportingError
                         :result-messages="resultMessages"
                         :show-form="showForm"
-                        :email-title="emailTitle"
-                        :current-user="currentUser"
-                        :current-user-email="currentUser?.email"
                         :message="message"
                         :submit="submit"
                         :dataset="dataset"
                         :job-details="jobDetails"
                         :notifications="buildNotifications(jobDetails.tool_id)" />
+                    <!-- <SelfReportingError
+                        :result-messages="resultMessages"
+                        :show-form="showForm"
+                        :current-user="currentUser"
+                        :message="message"
+                        :submit="submit"
+                        :dataset="dataset"
+                        :job-details="jobDetails"
+                        :notifications="buildNotifications(jobDetails.tool_id)" /> -->
                 </div>
             </JobDetailsProvider>
         </DatasetProvider>
@@ -55,6 +61,10 @@ export default {
             type: String,
             required: true,
         },
+        notifications: {
+            type: Array,
+            default: () => [],
+        },
     },
     setup() {
         const { renderMarkdown } = useMarkdown({ openLinksInNewPage: true });
@@ -65,7 +75,6 @@ export default {
             message: null,
             errorMessage: null,
             resultMessages: [],
-            emailTitle: this.l("Your email address"),
         };
     },
     computed: {
