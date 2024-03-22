@@ -17,7 +17,7 @@
                         :message="message"
                         :submit="submit"
                         :dataset="dataset"
-                        :job-details="jobDetails"
+                        :command-outputs="buildCommandOutputs(jobDetails)"
                         :notifications="buildNotifications(jobDetails.tool_id)" />
                 </div>
             </JobDetailsProvider>
@@ -52,10 +52,6 @@ export default {
             type: String,
             required: true,
         },
-        notifications: {
-            type: Array,
-            default: () => [],
-        },
     },
     setup() {
         const { renderMarkdown } = useMarkdown({ openLinksInNewPage: true });
@@ -84,6 +80,22 @@ export default {
             return [
                 {
                     text: `An error occurred while running the tool <b id='dataset-error-tool-id' class='text-break  '>${toolId}</b>.`,
+                },
+            ];
+        },
+        buildCommandOutputs(details) {
+            return [
+                {
+                    text: "Execution resulted in the following messages:",
+                    detail: details.job_messages,
+                },
+                {
+                    text: "Tool generated the following standard error:",
+                    detail: [details.tool_stderr],
+                },
+                {
+                    text: "Galaxy job runner generated the following standard error:",
+                    detail: [details.job_stderr],
                 },
             ];
         },

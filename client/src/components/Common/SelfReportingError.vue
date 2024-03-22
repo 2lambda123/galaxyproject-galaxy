@@ -10,10 +10,17 @@
                 <span v-html="notifications[0].text" />
             </BAlert>
         </span>
-        <DatasetErrorDetails
-            :tool-stderr="jobDetails.tool_stderr"
-            :job-stderr="jobDetails.job_stderr"
-            :job-messages="jobDetails.job_messages" />
+        <div v-if="hasDetails(commandOutputs)">
+            <h4 class="h-md">Details</h4>
+            <div v-for="(commandOutput, index) in commandOutputs" :key="index">
+                <div v-if="hasMessages(commandOutput.detail)">
+                    <p class="mt-3 mb-1">{{ commandOutput.text }}</p>
+                    <div v-for="(value, index) in commandOutput.detail" :key="index">
+                        <pre class="rounded code">{{ value }}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
         <JobProblemProvider v-slot="{ result: jobProblems }" :job-id="dataset.creating_job" @error="onError">
             <div v-if="jobProblems && (jobProblems.has_duplicate_inputs || jobProblems.has_empty_inputs)">
                 <h4 class="common_problems mt-3 h-md">Detected Common Potential Problems</h4>
@@ -76,25 +83,23 @@ import { getGalaxyInstance } from "@/app";
 import { useMarkdown } from "@/composables/markdown";
 import { useUserStore } from "@/stores/userStore";
 
-import DatasetErrorDetails from "../DatasetInformation/DatasetErrorDetails";
 import { sendErrorReport } from "../DatasetInformation/services";
 
 export default {
     components: {
-        DatasetErrorDetails,
         FontAwesomeIcon,
         FormElement,
         JobProblemProvider,
         BAlert,
     },
     props: {
-        jobDetails: {
-            type: Object,
-            required: true,
-        },
         dataset: {
             type: Object,
             required: true,
+        },
+        commandOutputs: {
+            type: Array,
+            default: () => [],
         },
         notifications: {
             type: Array,
@@ -137,6 +142,17 @@ export default {
                     this.errorMessage = errorMessage;
                 }
             );
+        },
+        hasDetails(outputs) {
+            return (
+                outputs
+                    .map(({ detail }) => detail)
+                    .flat(Infinity)
+                    .filter((item) => item.length > 0).length > 0
+            );
+        },
+        hasMessages(output) {
+            return output.filter((item) => item.length > 0).length > 0;
         },
     },
 };
