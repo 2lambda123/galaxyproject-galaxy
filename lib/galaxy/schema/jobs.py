@@ -98,6 +98,11 @@ class ReportJobErrorPayload(Model):
         title="Message",
         description="The optional message sent with the error report.",
     )
+    toolTranscript: Optional[str] = Field(
+        default=None,
+        title="Transcript",
+        description="The optional Tool Transcript error created by the user and sent with the error report.",
+    )
 
 
 class SearchJobsPayload(Model):

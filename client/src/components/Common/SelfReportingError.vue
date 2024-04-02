@@ -4,12 +4,9 @@
             <div class="response-message"></div>
         </div>
         <h3 class="h-lg">Dataset Error Report</h3>
-        <p v-if="notifications && !notifications.variant" v-html="notifications[0].text" />
-        <span v-else-if="notifications && notifications.variant">
-            <BAlert :variant="notifications.variant">
-                <span v-html="notifications[0].text" />
-            </BAlert>
-        </span>
+        <BAlert v-for="(notification, index) in notifications" :key="index" :variant="notification.variant" show>
+            <span v-html="notification.text" />
+        </BAlert>
         <div v-if="hasDetails(commandOutputs)">
             <h4 class="h-md">Details</h4>
             <div v-for="(commandOutput, index) in commandOutputs" :key="index">
@@ -21,19 +18,6 @@
                 </div>
             </div>
         </div>
-        <JobProblemProvider v-slot="{ result: jobProblems }" :job-id="dataset.creating_job" @error="onError">
-            <div v-if="jobProblems && (jobProblems.has_duplicate_inputs || jobProblems.has_empty_inputs)">
-                <h4 class="common_problems mt-3 h-md">Detected Common Potential Problems</h4>
-                <p v-if="jobProblems.has_empty_inputs" id="dataset-error-has-empty-inputs">
-                    The tool was started with one or more empty input datasets. This frequently results in tool errors
-                    due to problematic input choices.
-                </p>
-                <p v-if="jobProblems.has_duplicate_inputs" id="dataset-error-has-duplicate-inputs">
-                    The tool was started with one or more duplicate input datasets. This frequently results in tool
-                    errors due to problematic input choices.
-                </p>
-            </div>
-        </JobProblemProvider>
         <h4 class="mt-3 h-md">Troubleshooting</h4>
         <p>
             There are a number of helpful resources to self diagnose and correct problems.
@@ -60,6 +44,19 @@
                 v-model="message"
                 :area="true"
                 title="Please provide detailed information on the activities leading to this issue:" />
+            <BLink
+                :aria-expanded="isExpanded ? 'true' : 'false'"
+                aria-controls="collapse-previous"
+                @click="isExpanded = !isExpanded">
+                ({{ title }}) Error transcript:
+            </BLink>
+            <BCollapse id="collapse-previous" v-model="isExpanded">
+                <FormElement
+                    id="transcript"
+                    v-model="transcript"
+                    :area="true"
+                    title="Error transcript:" />
+            </BCollapse><br>
             <b-button
                 id="dataset-error-submit"
                 variant="primary"
@@ -74,7 +71,7 @@
 
 <script>
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
-import { BAlert } from "bootstrap-vue";
+import { BAlert, BButton, BCollapse, BLink } from "bootstrap-vue";
 import FormElement from "components/Form/FormElement";
 import { JobProblemProvider } from "components/providers/JobProvider";
 import { mapState } from "pinia";
@@ -84,6 +81,7 @@ import { useMarkdown } from "@/composables/markdown";
 import { useUserStore } from "@/stores/userStore";
 
 import { sendErrorReport } from "../DatasetInformation/services";
+import { sendErrorReportTool } from "../ToolInformation/services";
 
 export default {
     components: {
@@ -91,6 +89,9 @@ export default {
         FormElement,
         JobProblemProvider,
         BAlert,
+        BButton, 
+        BCollapse,
+        BLink,
     },
     props: {
         dataset: {
@@ -105,6 +106,10 @@ export default {
             type: Array,
             default: () => [],
         },
+        transcript: {
+            type: String,
+            default: "",
+        },
     },
     setup() {
         const { renderMarkdown } = useMarkdown({ openLinksInNewPage: true });
@@ -115,6 +120,7 @@ export default {
             message: null,
             errorMessage: null,
             resultMessages: [],
+            isExpanded: false,
         };
     },
     computed: {
@@ -128,20 +134,36 @@ export default {
             const isEmailActive = !getGalaxyInstance().config.show_inactivity_warning;
             return !this.currentUser?.email || !isEmailActive;
         },
+        title() {
+            return this.isExpanded ? `-` : `+`;  
+        },
     },
     methods: {
         onError(err) {
             this.errorMessage = err;
         },
-        submit(dataset, email) {
-            sendErrorReport(dataset, this.message, email).then(
-                (resultMessages) => {
-                    this.resultMessages = resultMessages;
-                },
-                (errorMessage) => {
-                    this.errorMessage = errorMessage;
-                }
-            );
+        submit(dataset, userEmailJob) {
+            const email = userEmailJob || this.currentUserEmail;
+            const message = this.message;
+            if (this.transcript) {
+                sendErrorReportTool(dataset, message, email, this.transcript).then(
+                    (resultMessages) => {
+                        this.resultMessages = resultMessages;
+                    },
+                    (errorMessage) => {
+                        this.errorMessage = errorMessage;
+                    }
+                );
+            } else {
+                sendErrorReport(dataset, message, email, this.transcript).then(
+                    (resultMessages) => {
+                        this.resultMessages = resultMessages;
+                    },
+                    (errorMessage) => {
+                        this.errorMessage = errorMessage;
+                    }
+                );
+            }
         },
         hasDetails(outputs) {
             return (

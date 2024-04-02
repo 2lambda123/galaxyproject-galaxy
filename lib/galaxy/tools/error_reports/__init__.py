@@ -65,7 +65,7 @@ class ErrorPlugin:
         for plugin in self.plugins:
             if user_submission == plugin.user_submission:
                 try:
-                    response = plugin.submit_report(dataset, job, tool, **kwargs)
+                    response = plugin.submit_report(dataset, job, tool, user, **kwargs)
                     log.debug("Bug report plugin %s generated response %s", plugin, response)
                     if plugin.verbose and response:
                         responses.append(response)

@@ -156,7 +156,7 @@ class ErrorReporter:
             roles = []
         return self.app.security_agent.can_access_dataset(roles, self.hda.dataset)
 
-    def create_report(self, user, email="", message="", redact_user_details_in_bugreport=False, **kwd):
+    def create_report(self, user, tool, email="", message="", redact_user_details_in_bugreport=False, **kwd):
         hda = self.hda
         job = self.job
         host = self.app.url_for("/", qualified=True)
@@ -205,8 +205,8 @@ class ErrorReporter:
             hda_show_params_link=hda_show_params_link,
             job_id_encoded=self.app.security.encode_id(job.id),
             job_id=job.id,
-            tool_version=job.tool_version,
-            job_tool_id=job.tool_id,
+            tool_version=tool.tool_version,
+            job_tool_id=tool.id,
             job_tool_version=hda.tool_version,
             job_runner_external_id=job.job_runner_external_id,
             job_command_line=job.command_line,
@@ -227,12 +227,12 @@ class ErrorReporter:
 
         self.html_report = string.Template(error_report_template_html).safe_substitute(report_variables)
 
-    def _send_report(self, user, email=None, message=None, **kwd):
+    def _send_report(self, user, tool, email=None, message=None, **kwd):
         return self.report
 
-    def send_report(self, user, email=None, message=None, **kwd):
+    def send_report(self, user, tool, email=None, message=None, **kwd):
         if self.report is None:
-            self.create_report(user, email=email, message=message, **kwd)
+            self.create_report(user, tool, email=email, message=message, **kwd)
         return self._send_report(user, email=email, message=message, **kwd)
 
 

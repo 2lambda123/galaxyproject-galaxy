@@ -8,16 +8,16 @@
             <ToolEntryPoints v-for="job in entryPoints" :key="job.id" :job-id="job.id" />
         </div>
         <b-modal v-model="showError" size="sm" :title="errorTitle | l" scrollable ok-only>
-            <b-alert v-if="errorMessage" show variant="danger">
-                {{ errorMessage }}
-            </b-alert>
-            <b-alert show variant="warning">
-                The server could not complete this request. Please verify your parameter settings, retry submission and
-                contact the Galaxy Team if this error persists. A transcript of the submitted data is shown below.
-            </b-alert>
-            <small class="text-muted">
-                <pre>{{ errorContentPretty }}</pre>
-            </small>
+            <SelfReportingError
+                :result-messages="[]"
+                :show-form="'true'"
+                :message="''"
+                :transcript="errorContentPretty"
+                :submit="submit"
+                :dataset="dataset"
+                :historyId="currentHistoryId"
+                :command-outputs="buildCommandOutputs(errorMessage)"
+                :notifications="buildNotifications(formConfig.id)" />
         </b-modal>
         <ToolRecommendation v-if="showRecommendation" :tool-id="formConfig.id" />
         <ToolCard
@@ -127,6 +127,7 @@ import ToolCard from "./ToolCard";
 import { allowCachedJobs } from "./utilities";
 
 import FormSelect from "@/components/Form/Elements/FormSelect.vue";
+import SelfReportingError from "../Common/SelfReportingError.vue";
 
 export default {
     components: {
@@ -139,6 +140,7 @@ export default {
         ToolEntryPoints,
         ToolRecommendation,
         Heading,
+        SelfReportingError,
     },
     props: {
         id: {
@@ -398,6 +400,26 @@ export default {
                     }
                 }
             );
+        },
+        buildNotifications(toolId) {
+            return [
+                {
+                    text: `An error occurred while running the tool <b id='dataset-error-tool-id' class='text-break  '>${toolId}</b>.`,
+                    variant: "danger"
+                },
+                {
+                    text: "The server could not complete this request. Please verify your parameter settings, retry submission and contact the Galaxy Team if this error persists. A transcript of the submitted data is shown below.",
+                    variant: "warning"
+                },
+            ];
+        },
+        buildCommandOutputs(detail) {
+            return [
+                {
+                    text: "Tool Message (?)",
+                    detail: [detail],
+                }
+            ];
         },
     },
 };

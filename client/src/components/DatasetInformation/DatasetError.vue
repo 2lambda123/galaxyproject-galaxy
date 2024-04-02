@@ -80,6 +80,7 @@ export default {
             return [
                 {
                     text: `An error occurred while running the tool <b id='dataset-error-tool-id' class='text-break  '>${toolId}</b>.`,
+                    variant: "danger"
                 },
             ];
         },
@@ -102,6 +103,7 @@ export default {
         submit(dataset, userEmailJob) {
             const email = userEmailJob || this.currentUserEmail;
             const message = this.message;
+
             sendErrorReport(dataset, message, email).then(
                 (resultMessages) => {
                     this.resultMessages = resultMessages;

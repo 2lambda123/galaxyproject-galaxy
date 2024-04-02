@@ -73,6 +73,8 @@ from galaxy.webapps.galaxy.services.jobs import (
 )
 from galaxy.work.context import WorkRequestContext
 
+import json
+
 log = logging.getLogger(__name__)
 
 router = Router(tags=["jobs"])
@@ -312,14 +314,40 @@ class FastAPIJobs:
         job_id: JobIdPathParam,
         trans: ProvidesUserContext = DependsOnTrans,
     ) -> JobErrorSummary:
+        myMessages = self.error_all(payload, job_id, trans)
+        return JobErrorSummary(messages=myMessages)
+
+    @router.post(
+        "/api/jobs/no-job-id-error",
+        name="report_error_no_job_id",
+        summary="Submits a bug report via the API.",
+    )
+    def error_no_job_id(
+        self,
+        payload: Annotated[ReportJobErrorPayload, ReportErrorBody],
+        trans: ProvidesUserContext = DependsOnTrans,
+    ) -> JobErrorSummary:
+        myMessages = self.error_all(payload=payload, job_id=None, trans=trans)
+        return JobErrorSummary(messages=myMessages)
+    
+    def error_all(
+        self,
+        payload: Annotated[ReportJobErrorPayload, ReportErrorBody],
+        job_id,
+        trans: ProvidesUserContext = DependsOnTrans,
+    ) -> JobErrorSummary:
         # Get dataset on which this error was triggered
         dataset_id = payload.dataset_id
         dataset = self.service.hda_manager.get_accessible(id=dataset_id, user=trans.user)
-        # Get job
-        job = self.service.get_job(trans, job_id)
         if not dataset.creating_job or dataset.creating_job.id != job.id:
             raise exceptions.RequestParameterInvalidException("dataset_id was not created by job_id")
-        tool = trans.app.toolbox.get_tool(job.tool_id, tool_version=job.tool_version) or None
+        if payload.toolTranscript:
+            job = {}
+            transcript = json.loads(payload.toolTranscript)
+            tool = trans.app.toolbox.get_tool(transcript["tool_id"], tool_version=transcript["tool_version"])
+        else:
+            job = self.service.get_job(trans, job_id)
+            tool = trans.app.toolbox.get_tool(job.tool_id, tool_version=job.tool_version) or None
         email = payload.email
         if not email and not trans.anonymous:
             email = trans.user.email
@@ -332,7 +360,7 @@ class FastAPIJobs:
             email=email,
             message=payload.message,
         )
-        return JobErrorSummary(messages=messages)
+        return messages
 
     @router.get(
         "/api/jobs/{job_id}/inputs",
