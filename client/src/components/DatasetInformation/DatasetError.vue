@@ -11,7 +11,7 @@
                 :job-id="dataset.creating_job"
                 @error="onError">
                 <div v-if="!loading">
-                    <SelfReportingError
+                    <UserReportingError
                         :result-messages="resultMessages"
                         :show-form="showForm"
                         :message="message"
@@ -37,7 +37,7 @@ import { useUserStore } from "@/stores/userStore";
 
 import { sendErrorReport } from "./services";
 
-import SelfReportingError from "../Common/SelfReportingError.vue";
+import UserReportingError from "../Common/UserReportingError.vue";
 
 library.add(faBug);
 
@@ -45,7 +45,7 @@ export default {
     components: {
         DatasetProvider,
         JobDetailsProvider,
-        SelfReportingError,
+        UserReportingError,
     },
     props: {
         datasetId: {

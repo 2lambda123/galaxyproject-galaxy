@@ -9,7 +9,7 @@
         </div>
         <b-modal v-model="showError" size="sm" :title="errorTitle | l" scrollable ok-only>
             {{ /* TODO integrate submit-prop into larger form */ }}
-            <SelfReportingError
+            <UserReportingError
                 :result-messages="[]"
                 :show-form="'true'"
                 :message="''"
@@ -126,7 +126,7 @@ import { getToolFormData, submitJob, updateToolFormData } from "./services";
 import ToolCard from "./ToolCard";
 import { allowCachedJobs } from "./utilities";
 
-import SelfReportingError from "../Common/SelfReportingError.vue";
+import UserReportingError from "../Common/UserReportingError.vue";
 import FormSelect from "@/components/Form/Elements/FormSelect.vue";
 
 export default {
@@ -140,7 +140,7 @@ export default {
         ToolEntryPoints,
         ToolRecommendation,
         Heading,
-        SelfReportingError,
+        UserReportingError,
     },
     props: {
         id: {
