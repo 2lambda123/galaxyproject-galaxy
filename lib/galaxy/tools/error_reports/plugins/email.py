@@ -23,13 +23,12 @@ class EmailPlugin(ErrorPlugin):
         self.verbose = string_as_bool(kwargs.get("verbose", True))
         self.user_submission = string_as_bool(kwargs.get("user_submission", True))
 
-    def submit_report(self, dataset, job, tool, user, **kwargs):
+    def submit_report(self, dataset, job, tool, **kwargs):
         """Send report as an email"""
         try:
             error_reporter = EmailErrorReporter(dataset.id, self.app)
             error_reporter.send_report(
-                user=user,
-                tool=tool,
+                user=job.get_user(),
                 email=kwargs.get("email", None),
                 message=kwargs.get("message", None),
                 redact_user_details_in_bugreport=self.redact_user_details_in_bugreport,
