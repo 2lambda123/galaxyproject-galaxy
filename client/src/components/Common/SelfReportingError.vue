@@ -54,14 +54,14 @@
                 ({{ title }}) Error transcript:
             </BLink>
             <BCollapse id="collapse-previous" v-model="isExpanded">
-                <pre class="rounded code">{{ transcript }}</pre>
-            </BCollapse><br>
-                <BButton
-                    id="dataset-error-submit"
-                    variant="primary"
-                    class="mt-3"
-                    :disabled="disableSubmit"
-                    @click="submit(dataset, currentUser?.email)">
+                <pre class="rounded code">{{ transcript }}</pre></BCollapse
+            ><br />
+            <BButton
+                id="dataset-error-submit"
+                variant="primary"
+                class="mt-3"
+                :disabled="disableSubmit"
+                @click="submit(dataset, currentUser?.email)">
                 <FontAwesomeIcon icon="bug" class="mr-1" />Report
             </BButton>
         </div>
@@ -131,7 +131,7 @@ export default {
             return !this.currentUser?.email || !isEmailActive;
         },
         title() {
-            return this.isExpanded ? `-` : `+`;  
+            return this.isExpanded ? `-` : `+`;
         },
     },
     methods: {
