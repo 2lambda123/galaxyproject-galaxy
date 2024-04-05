@@ -119,6 +119,7 @@ import { refreshContentsWrapper } from "utils/data";
 import { useConfigStore } from "@/stores/configurationStore";
 import { useHistoryStore } from "@/stores/historyStore";
 import { useUserStore } from "@/stores/userStore";
+import { errorMessageAsString } from "@/utils/simple-error";
 
 import ToolRecommendation from "../ToolRecommendation";
 import { getToolFormData, submitJob, updateToolFormData } from "./services";
@@ -381,7 +382,7 @@ export default {
                     }
                 },
                 (e) => {
-                    this.errorMessage = e?.response?.data?.err_msg;
+                    this.errorMessage = errorMessageAsString(e);
                     this.showExecuting = false;
                     let genericError = true;
                     const errorData = e && e.response && e.response.data && e.response.data.err_data;
