@@ -1501,6 +1501,7 @@ class JobIndexQueryPayload(Model):
     workflow_id: Optional[DecodedDatabaseIdField] = None
     invocation_id: Optional[DecodedDatabaseIdField] = None
     implicit_collection_jobs_id: Optional[DecodedDatabaseIdField] = None
+    tool_request_id: Optional[DecodedDatabaseIdField] = None
     order_by: JobIndexSortByEnum = JobIndexSortByEnum.update_time
     search: Optional[str] = None
     limit: int = 500
@@ -3642,6 +3643,16 @@ class AsyncTaskResultSummary(Model):
         None,
         title="Queue of task being done derived from Celery AsyncResult",
     )
+
+
+ToolRequestIdField = Field(title="ID", description="Encoded ID of the role")
+
+
+class ToolRequestModel(Model):
+    id: DecodedDatabaseIdField = ToolRequestIdField
+    request: Dict[str, Any]
+    state: str
+    state_message: Optional[str]
 
 
 class AsyncFile(Model):
