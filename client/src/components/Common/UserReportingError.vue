@@ -79,6 +79,7 @@ import { useMarkdown } from "@/composables/markdown";
 import { useUserStore } from "@/stores/userStore";
 
 import { sendErrorReport } from "../DatasetInformation/services";
+import { sendErrorReportTool } from "../ToolInformation/services";
 
 export default {
     components: {
@@ -141,14 +142,25 @@ export default {
         submit(dataset, userEmailJob) {
             const email = userEmailJob || this.currentUserEmail;
             const message = this.message;
-            sendErrorReport(dataset, message, email, this.transcript).then(
-                (resultMessages) => {
-                    this.resultMessages = resultMessages;
-                },
-                (errorMessage) => {
-                    this.errorMessage = errorMessage;
-                }
-            );
+            if (this.transcript) {
+                sendErrorReportTool(dataset, message, email, this.transcript).then(
+                    (resultMessages) => {
+                        this.resultMessages = resultMessages;
+                    },
+                    (errorMessage) => {
+                        this.errorMessage = errorMessage;
+                    }
+                );
+            } else {
+                sendErrorReport(dataset, message, email, this.transcript).then(
+                    (resultMessages) => {
+                        this.resultMessages = resultMessages;
+                    },
+                    (errorMessage) => {
+                        this.errorMessage = errorMessage;
+                    }
+                );
+            }
         },
         hasDetails(outputs) {
             return (

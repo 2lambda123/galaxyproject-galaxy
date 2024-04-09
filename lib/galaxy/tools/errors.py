@@ -57,6 +57,9 @@ ${job_info}
 job traceback:
 ${job_traceback}
 -----------------------------------------------------------------------------
+tool transcript:
+${tool_transcript}
+-----------------------------------------------------------------------------
 (This is an automated message).
 """
 
@@ -125,28 +128,37 @@ ${job_info}
 ${job_traceback}
 </pre>
 
+<h4>Tool Transcript</h4>
+<pre style="white-space: pre-wrap;background: #eeeeee;border:1px solid black;padding:1em;">
+${tool_transcript}
+</pre>
+
 This is an automated message. Do not reply to this address.
 </body></html>
 """
 
 
 class ErrorReporter:
-    def __init__(self, hda, app):
-        # Get the dataset
-        sa_session = app.model.context
-        if not isinstance(hda, model.HistoryDatasetAssociation):
-            hda_id = hda
-            try:
-                hda = sa_session.get(model.HistoryDatasetAssociation, hda_id)
-                assert hda is not None, ValueError("No HDA yet")
-            except Exception:
-                hda = sa_session.get(model.HistoryDatasetAssociation, app.security.decode_id(hda_id))
-        assert isinstance(hda, model.HistoryDatasetAssociation), ValueError(f"Bad value provided for HDA ({hda}).")
-        self.hda = hda
-        # Get the associated job
-        self.job = hda.creating_job
+    def __init__(self, hda, app, report_type="dataset"):
+        if report_type == "dataset":
+            # Get the dataset
+            sa_session = app.model.context
+            if not isinstance(hda, model.HistoryDatasetAssociation):
+                hda_id = hda
+                try:
+                    hda = sa_session.get(model.HistoryDatasetAssociation, hda_id)
+                    assert hda is not None, ValueError("No HDA yet")
+                except Exception:
+                    hda = sa_session.get(model.HistoryDatasetAssociation, app.security.decode_id(hda_id))
+            assert isinstance(hda, model.HistoryDatasetAssociation), ValueError(f"Bad value provided for HDA ({hda}).")
+            self.hda = hda
+            # Get the associated job
+            self.job = hda.creating_job
+            self.tool_id = self.job.tool_id
+        elif report_type == "tool":
+            self.hda = None
+            self.tool_id = hda
         self.app = app
-        self.tool_id = self.job.tool_id
         self.report = None
 
     def _can_access_dataset(self, user):
@@ -157,15 +169,65 @@ class ErrorReporter:
         return self.app.security_agent.can_access_dataset(roles, self.hda.dataset)
 
     def create_report(self, user, email="", message="", redact_user_details_in_bugreport=False, **kwd):
-        hda = self.hda
-        job = self.job
-        host = self.app.url_for("/", qualified=True)
-        history_id_encoded = self.app.security.encode_id(hda.history_id)
-        history_view_link = self.app.url_for("/histories/view", id=history_id_encoded, qualified=True)
-        hda_id_encoded = self.app.security.encode_id(hda.id)
-        hda_show_params_link = self.app.url_for(
-            controller="dataset", action="details", dataset_id=hda_id_encoded, qualified=True
-        )
+        report_type = kwd.get("report_type")
+        tool = kwd.get("tool")
+        hda = ""
+        job = ""
+        history_id_encoded = ""
+        history_view_link = ""
+        hda_id_encoded = ""
+        hda_show_params_link = ""
+        dataset_id_encoded=""
+        dataset_id=""
+        history_id=""
+        hid=""
+        history_item_name=""
+        history_id_encoded = ""
+        history_view_link = ""
+        hda_id_encoded = ""
+        hda_show_params_link = ""
+        job_id_encoded = ""
+        job_id=""
+        tool_version=""
+        job_tool_id=""
+        job_tool_version=""
+        tool_transcript=""
+        job_runner_external_id=""
+        job_command_line=""
+        job_stderr=""
+        job_stdout=""
+        job_info=""
+        job_traceback=""
+
+        if report_type == "dataset":
+            hda = self.hda
+            job = self.job
+            dataset_id_encoded=self.app.security.encode_id(hda.dataset_id)
+            dataset_id=hda.dataset_id
+            history_id=hda.history_id
+            hid=hda.hid
+            history_item_name=hda.get_display_name()
+            history_id_encoded = self.app.security.encode_id(hda.history_id)
+            history_view_link = self.app.url_for("/histories/view", id=history_id_encoded, qualified=True)
+            hda_id_encoded = self.app.security.encode_id(hda.id)
+            hda_show_params_link = self.app.url_for(
+                controller="dataset", action="details", dataset_id=hda_id_encoded, qualified=True
+            )
+            job_id_encoded=self.app.security.encode_id(job.id)
+            job_id=job.id
+            tool_version=job.tool_version
+            job_tool_id=job.tool_id
+            job_tool_version=hda.tool_version
+            job_runner_external_id=job.job_runner_external_id
+            job_command_line=job.command_line
+            job_stderr=util.unicodify(job.stderr)
+            job_stdout=util.unicodify(job.stdout)
+            job_info=util.unicodify(job.info)
+            job_traceback=util.unicodify(job.traceback)
+        elif report_type == "tool":
+            job_tool_id=tool.id
+            job_tool_version=tool.version
+            tool_transcript = kwd.get("transcript")
         # Build the email message
         if redact_user_details_in_bugreport:
             # This is sub-optimal but it is hard to solve fully. This affects
@@ -193,27 +255,28 @@ class ErrorReporter:
                 email_str = "'%s'" % (email or "anonymous")
 
         report_variables = dict(
-            host=host,
-            dataset_id_encoded=self.app.security.encode_id(hda.dataset_id),
-            dataset_id=hda.dataset_id,
+            host=self.app.url_for("/", qualified=True),
+            dataset_id_encoded=dataset_id_encoded,
+            dataset_id=dataset_id,
             history_id_encoded=history_id_encoded,
-            history_id=hda.history_id,
+            history_id=history_id,
             hda_id_encoded=hda_id_encoded,
-            hid=hda.hid,
-            history_item_name=hda.get_display_name(),
+            hid=hid,
+            history_item_name=history_item_name,
             history_view_link=history_view_link,
             hda_show_params_link=hda_show_params_link,
-            job_id_encoded=self.app.security.encode_id(job.id),
-            job_id=job.id,
-            tool_version=job.tool_version,
-            job_tool_id=job.tool_id,
-            job_tool_version=hda.tool_version,
-            job_runner_external_id=job.job_runner_external_id,
-            job_command_line=job.command_line,
-            job_stderr=util.unicodify(job.stderr),
-            job_stdout=util.unicodify(job.stdout),
-            job_info=util.unicodify(job.info),
-            job_traceback=util.unicodify(job.traceback),
+            job_id_encoded=job_id_encoded,
+            job_id=job_id,
+            tool_version=tool_version,
+            job_tool_id=job_tool_id,
+            job_tool_version=job_tool_version,
+            tool_transcript=tool_transcript,
+            job_runner_external_id=job_runner_external_id,
+            job_command_line=job_command_line,
+            job_stderr=job_stderr,
+            job_stdout=job_stdout,
+            job_info=job_info,
+            job_traceback=job_traceback,
             email_str=email_str,
             message=util.unicodify(message),
         )
@@ -235,9 +298,16 @@ class ErrorReporter:
             self.create_report(user, email=email, message=message, **kwd)
         return self._send_report(user, email=email, message=message, **kwd)
 
+    def email_report(self, user, email=None, message=None, **kwd):
+        if self.report is None:
+            self.create_report(user, email=email, message=message, **kwd)
+        return self._send_report(user, email=email, message=message, **kwd)
+
 
 class EmailErrorReporter(ErrorReporter):
     def _send_report(self, user, email=None, message=None, **kwd):
+        report_type = kwd.get("report_type")
+        tool = kwd.get("tool")
         smtp_server = self.app.config.smtp_server
         assert smtp_server, ValueError("Mail is not configured for this Galaxy instance")
         to = self.app.config.error_email_to
@@ -248,9 +318,12 @@ class EmailErrorReporter(ErrorReporter):
             to += f", {email.strip()}"
         subject = f"Galaxy tool error report from {email}"
         try:
-            subject = "{} ({})".format(
-                subject, self.app.toolbox.get_tool(self.job.tool_id, self.job.tool_version).old_id
-            )
+            if report_type == "dataset":
+                subject = "{} ({})".format(
+                    subject, self.app.toolbox.get_tool(self.job.tool_id, self.job.tool_version).old_id
+                )
+            elif report_type == "tool":
+                subject = "{} ({})".format(subject, tool.old_id)
         except Exception:
             pass
 
