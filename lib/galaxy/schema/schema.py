@@ -3660,8 +3660,8 @@ class DatasetSummary(Model):
 
 
 class UserReportingErrorPayload(Model):
-    dataset_id: DecodedDatabaseIdField = Field(
-        default=...,
+    dataset_id: Optional[DecodedDatabaseIdField] = Field(
+        default={},
         title="History Dataset Association ID",
         description="The History Dataset Association ID related to the error.",
     )

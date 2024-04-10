@@ -61,7 +61,7 @@
                 variant="primary"
                 class="mt-3"
                 :disabled="disableSubmit"
-                @click="submit(dataset, currentUser?.email)">
+                @click="submit({}, currentUser?.email)">
                 <FontAwesomeIcon icon="bug" class="mr-1" />Report
             </BButton>
         </div>
@@ -93,7 +93,8 @@ export default {
     props: {
         dataset: {
             type: Object,
-            required: true,
+            required: false,
+            default: () => {},
         },
         commandOutputs: {
             type: Array,
