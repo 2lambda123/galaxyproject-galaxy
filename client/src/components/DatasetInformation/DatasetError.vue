@@ -15,7 +15,6 @@
                         :result-messages="resultMessages"
                         :show-form="showForm"
                         :message="message"
-                        :submit="submit"
                         :dataset="dataset"
                         :command-outputs="buildCommandOutputs(jobDetails)"
                         :notifications="buildNotifications(jobDetails.tool_id)" />
@@ -34,8 +33,6 @@ import { mapState } from "pinia";
 
 import { useMarkdown } from "@/composables/markdown";
 import { useUserStore } from "@/stores/userStore";
-
-import { sendErrorReport } from "./services";
 
 import UserReportingError from "../Common/UserReportingError.vue";
 
@@ -98,18 +95,6 @@ export default {
                     detail: [details.job_stderr],
                 },
             ];
-        },
-        submit(dataset, userEmailJob) {
-            const email = userEmailJob || this.currentUserEmail;
-            const message = this.message;
-            sendErrorReport(dataset, message, email).then(
-                (resultMessages) => {
-                    this.resultMessages = resultMessages;
-                },
-                (errorMessage) => {
-                    this.errorMessage = errorMessage;
-                }
-            );
         },
     },
 };

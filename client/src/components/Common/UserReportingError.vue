@@ -61,7 +61,7 @@
                 variant="primary"
                 class="mt-3"
                 :disabled="disableSubmit"
-                @click="submit({}, currentUser?.email)">
+                @click="submit(currentUser?.email)">
                 <FontAwesomeIcon icon="bug" class="mr-1" />Report
             </BButton>
         </div>
@@ -79,7 +79,6 @@ import { useMarkdown } from "@/composables/markdown";
 import { useUserStore } from "@/stores/userStore";
 
 import { sendErrorReport } from "../DatasetInformation/services";
-import { sendErrorReportTool } from "../ToolInformation/services";
 
 export default {
     components: {
@@ -140,28 +139,18 @@ export default {
         onError(err) {
             this.errorMessage = err;
         },
-        submit(dataset, userEmailJob) {
+        submit(userEmailJob) {
             const email = userEmailJob || this.currentUserEmail;
             const message = this.message;
-            if (this.transcript) {
-                sendErrorReportTool(dataset, message, email, this.transcript).then(
-                    (resultMessages) => {
-                        this.resultMessages = resultMessages;
-                    },
-                    (errorMessage) => {
-                        this.errorMessage = errorMessage;
-                    }
-                );
-            } else {
-                sendErrorReport(dataset, message, email, this.transcript).then(
-                    (resultMessages) => {
-                        this.resultMessages = resultMessages;
-                    },
-                    (errorMessage) => {
-                        this.errorMessage = errorMessage;
-                    }
-                );
-            }
+            const report_type = this.transcript ? "tool" : "dataset";
+            sendErrorReport(email, message, report_type, this.dataset, this.transcript).then(
+                (resultMessages) => {
+                    this.resultMessages = resultMessages;
+                },
+                (errorMessage) => {
+                    this.errorMessage = errorMessage;
+                }
+            );
         },
         hasDetails(outputs) {
             return (

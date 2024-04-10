@@ -8,12 +8,10 @@
             <ToolEntryPoints v-for="job in entryPoints" :key="job.id" :job-id="job.id" />
         </div>
         <b-modal v-model="showError" size="sm" :title="errorTitle | l" scrollable ok-only>
-            {{ /* TODO integrate submit-prop into larger form */ }}
             <UserReportingError
                 :result-messages="[]"
                 :show-form="'true'"
                 :message="''"
-                :submit="submit"
                 :transcript="errorContentPretty"
                 :command-outputs="buildCommandOutputs(errorMessage)"
                 :notifications="buildNotifications(formConfig.id)" />
