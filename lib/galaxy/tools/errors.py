@@ -235,6 +235,7 @@ class ErrorReporter:
             self.create_report(user, email=email, message=message, **kwd)
         return self._send_report(user, email=email, message=message, **kwd)
 
+
 class EmailErrorReporter(ErrorReporter):
     def _send_report(self, user, email=None, message=None, **kwd):
         smtp_server = self.app.config.smtp_server
