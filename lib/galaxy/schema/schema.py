@@ -3657,34 +3657,3 @@ class DatasetSummary(Model):
     file_size: int
     total_size: int
     uuid: UuidField
-
-
-class UserReportingErrorPayload(Model):
-    dataset_id: Optional[DecodedDatabaseIdField] = Field(
-        default={},
-        title="History Dataset Association ID",
-        description="The History Dataset Association ID related to the error.",
-    )
-    message: Optional[str] = Field(
-        default=None,
-        title="Message",
-        description="The optional message sent with the error report.",
-    )
-    email: Optional[str] = Field(
-        default=None,
-        title="Email",
-        description="Email address for communication with the user. Only required for anonymous users.",
-    )
-    transcript: Optional[str] = Field(
-        default=None,
-        title="Transcript",
-        description="The optional tool transcript sent with the error report.",
-    )
-
-
-class UserReportingErrorSummary(Model):
-    messages: List[List[str]] = Field(
-        default=...,
-        title="Error messages",
-        description="The error messages for the specified job.",
-    )

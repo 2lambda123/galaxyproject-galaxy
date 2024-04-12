@@ -54,7 +54,7 @@
                 ({{ title }}) Error transcript:
             </BLink>
             <BCollapse id="collapse-previous" v-model="isExpanded">
-                <pre class="rounded code">{{ transcript }}</pre></BCollapse
+                <pre class="rounded code">{{ api_request }}</pre></BCollapse
             ><br />
             <BButton
                 id="dataset-error-submit"
@@ -103,7 +103,7 @@ export default {
             type: Array,
             default: () => [],
         },
-        transcript: {
+        api_request: {
             type: String,
             default: "",
         },
@@ -142,8 +142,7 @@ export default {
         submit(userEmailJob) {
             const email = userEmailJob || this.currentUserEmail;
             const message = this.message;
-            const report_type = this.transcript ? "tool" : "dataset";
-            sendErrorReport(email, message, report_type, this.dataset, this.transcript).then(
+            sendErrorReport(email, message, "dataset", this.dataset, this.api_request).then(
                 (resultMessages) => {
                     this.resultMessages = resultMessages;
                 },

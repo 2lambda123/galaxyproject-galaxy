@@ -25,25 +25,12 @@ class EmailPlugin(ErrorPlugin):
 
     def submit_report(self, dataset, job, tool, **kwargs):
         """Send report as an email"""
-        data_uid = None
         try:
-            report_type = kwargs.get("report_type")
-            transcript = kwargs.get("transcript")
-            if report_type == "dataset":
-                data_uid = dataset.id
-                user = job.get_user()
-            elif report_type == "tool":
-                data_uid = dataset
-                user = kwargs.get("user")
-
-            error_reporter = EmailErrorReporter(data_uid, self.app, report_type)
+            error_reporter = EmailErrorReporter(dataset.id, self.app)
             error_reporter.send_report(
-                user=user,
+                user=job.get_user(),
                 email=kwargs.get("email", None),
                 message=kwargs.get("message", None),
-                report_type=report_type,
-                tool=tool,
-                transcript=transcript,
                 redact_user_details_in_bugreport=self.redact_user_details_in_bugreport,
             )
             return ("Your error report has been sent", "success")

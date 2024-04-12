@@ -328,7 +328,6 @@ class FastAPIJobs:
             job=job,
             tool=tool,
             user_submission=True,
-            report_type="dataset",
             user=trans.user,
             email=email,
             message=payload.message,

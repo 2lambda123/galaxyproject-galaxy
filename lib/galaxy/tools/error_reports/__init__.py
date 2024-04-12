@@ -57,8 +57,7 @@ class ErrorPlugin:
             roles = []
         return self.app.security_agent.can_access_dataset(roles, dataset.dataset)
 
-    def submit_report(self, dataset, job, tool, user_submission=False, **kwargs):
-        user = kwargs.get("user")
+    def submit_report(self, dataset, job, tool, user=None, user_submission=False, **kwargs):
         if user_submission:
             assert self._can_access_dataset(dataset, user), Exception("You are not allowed to access this dataset.")
 
