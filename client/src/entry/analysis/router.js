@@ -31,6 +31,7 @@ import { NotificationsPreferences } from "components/User/Notifications";
 import UserPreferences from "components/User/UserPreferences";
 import UserPreferencesForm from "components/User/UserPreferencesForm";
 import VisualizationsList from "components/Visualizations/Index";
+import VisualizationFrame from "components/Visualizations/VisualizationFrame";
 import VisualizationPublished from "components/Visualizations/VisualizationPublished";
 import HistoryInvocations from "components/Workflow/HistoryInvocations";
 import TrsImport from "components/Workflow/Import/TrsImport";
@@ -481,6 +482,16 @@ export function getRouter(Galaxy) {
                         }),
                     },
                     {
+                        path: "visualizations/display",
+                        component: VisualizationFrame,
+                        name: "VisualizationsDisplay",
+                        props: (route) => ({
+                            datasetId: route.query.dataset_id,
+                            visualization: route.query.visualization,
+                            visualizationId: route.query.visualization_id,
+                        }),
+                    },
+                    {
                         path: "visualizations/edit",
                         component: FormGeneric,
                         props: (route) => ({
@@ -545,7 +556,10 @@ export function getRouter(Galaxy) {
                     {
                         path: "workflows/invocations/:invocationId",
                         component: WorkflowInvocationState,
-                        props: true,
+                        props: (route) => ({
+                            invocationId: route.params.invocationId,
+                            isFullPage: true,
+                        }),
                     },
                     {
                         path: "workflows/list",
