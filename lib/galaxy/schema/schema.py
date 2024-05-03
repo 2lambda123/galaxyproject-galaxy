@@ -3738,7 +3738,14 @@ class DatasetSummary(Model):
     uuid: UuidField
 
 
-class MessageExceptionModel(Model):
+class ValidationErrorModel(BaseModel):
+    type: str
+    loc: tuple[int | str, ...]
+    msg: str
+    input: Any
+
+
+class MessageExceptionModel(BaseModel):
     err_msg: str
     err_code: int
-    validation_errors: List[Dict[str, str]]
+    validation_errors: List[ValidationErrorModel]
