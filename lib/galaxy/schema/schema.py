@@ -3736,3 +3736,9 @@ class DatasetSummary(Model):
     file_size: int
     total_size: int
     uuid: UuidField
+
+
+class MessageExceptionModel(Model):
+    err_msg: str
+    err_code: int
+    validation_errors: List[Dict[str, str]]
