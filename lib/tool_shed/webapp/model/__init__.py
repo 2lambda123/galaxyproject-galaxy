@@ -41,6 +41,7 @@ from sqlalchemy.orm import (
 
 import tool_shed.repository_types.util as rt_util
 from galaxy import util
+from galaxy.model import _HasTable
 from galaxy.model.custom_types import (
     MutableJSONType,
     TrimmedString,
@@ -76,7 +77,7 @@ else:
 mapper_registry = registry()
 
 
-class Base(metaclass=DeclarativeMeta):
+class Base(_HasTable, metaclass=DeclarativeMeta):
     __abstract__ = True
     registry = mapper_registry
     metadata = mapper_registry.metadata
@@ -95,7 +96,7 @@ class APIKeys(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
     user_id: Mapped[Optional[int]] = mapped_column(ForeignKey("galaxy_user.id"), index=True)
-    key: Mapped[Optional[str]] = mapped_column(TrimmedString(32), index=True, unique=True)
+    key: Mapped[str] = mapped_column(TrimmedString(32), index=True, unique=True, nullable=True)
     user = relationship("User", back_populates="api_keys")
     deleted: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
 

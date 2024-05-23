@@ -7,6 +7,7 @@ from typing import (
     Optional,
     Type,
     TypeVar,
+    Union,
 )
 
 from fastapi import (
@@ -28,8 +29,8 @@ from starlette_context import context as request_context
 
 from galaxy.exceptions import AdminRequiredException
 from galaxy.managers.session import GalaxySessionManager
-from galaxy.managers.users import UserManager
 from galaxy.model.base import transaction
+from galaxy.schema import BootstrapAdminUser
 from galaxy.security.idencoding import IdEncodingHelper
 from galaxy.util import unicodify
 from galaxy.web.framework.decorators import require_admin_message
@@ -46,6 +47,7 @@ from tool_shed.context import (
     SessionRequestContext,
     SessionRequestContextImpl,
 )
+from tool_shed.managers.users import UserManager
 from tool_shed.structured_app import ToolShedApp
 from tool_shed.webapp import app as tool_shed_app_mod
 from tool_shed.webapp.model import (
@@ -88,7 +90,7 @@ def get_api_user(
     user_manager: UserManager = depends(UserManager),
     key: str = Security(api_key_query),
     x_api_key: str = Security(api_key_header),
-) -> Optional[User]:
+) -> Optional[Union[User, BootstrapAdminUser]]:
     api_key = key or x_api_key
     if not api_key:
         return None

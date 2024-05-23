@@ -135,6 +135,10 @@ import galaxy.model.metadata
 import galaxy.model.tags
 import galaxy.security.passwords
 import galaxy.util
+from galaxy.datatypes.protocols import (
+    DatasetHasHidProtocol,
+    DatasetProtocol,
+)
 from galaxy.files.templates import (
     FileSourceConfiguration,
     FileSourceTemplate,
@@ -475,6 +479,7 @@ class HasName:
 
 
 class UsesCreateAndUpdateTime:
+    create_time: Mapped[Optional[datetime]]
     update_time: Mapped[Optional[datetime]]
 
     @property
@@ -777,7 +782,7 @@ class User(Base, Dictifiable, RepresentById):
     create_time: Mapped[datetime] = mapped_column(default=now, nullable=True)
     update_time: Mapped[datetime] = mapped_column(default=now, onupdate=now, nullable=True)
     email: Mapped[str] = mapped_column(TrimmedString(255), index=True)
-    username: Mapped[Optional[str]] = mapped_column(TrimmedString(255), index=True, unique=True)
+    username: Mapped[str] = mapped_column(TrimmedString(255), index=True, unique=True, nullable=True)
     password: Mapped[str] = mapped_column(TrimmedString(255))
     last_password_change: Mapped[Optional[datetime]] = mapped_column(default=now)
     external: Mapped[Optional[bool]] = mapped_column(default=False)
@@ -4069,7 +4074,7 @@ class Dataset(Base, StorableObject, Serializable):
     active_history_associations: Mapped[List["HistoryDatasetAssociation"]] = relationship(
         primaryjoin=(
             lambda: and_(
-                Dataset.id == HistoryDatasetAssociation.dataset_id,  # type: ignore[attr-defined]
+                Dataset.id == HistoryDatasetAssociation.dataset_id,
                 HistoryDatasetAssociation.deleted == false(),  # type: ignore[has-type]
                 HistoryDatasetAssociation.purged == false(),  # type: ignore[arg-type]
             )
@@ -4079,7 +4084,7 @@ class Dataset(Base, StorableObject, Serializable):
     purged_history_associations: Mapped[List["HistoryDatasetAssociation"]] = relationship(
         primaryjoin=(
             lambda: and_(
-                Dataset.id == HistoryDatasetAssociation.dataset_id,  # type: ignore[attr-defined]
+                Dataset.id == HistoryDatasetAssociation.dataset_id,
                 HistoryDatasetAssociation.purged == true(),  # type: ignore[arg-type]
             )
         ),
@@ -4530,7 +4535,7 @@ def datatype_for_extension(extension, datatypes_registry=None) -> "Data":
     return ret
 
 
-class DatasetInstance(RepresentById, UsesCreateAndUpdateTime, _HasTable):
+class DatasetInstance(DatasetProtocol, RepresentById, UsesCreateAndUpdateTime, _HasTable):
     """A base class for all 'dataset instances', HDAs, LDAs, etc"""
 
     states = Dataset.states
@@ -4973,7 +4978,9 @@ class DatasetInstance(RepresentById, UsesCreateAndUpdateTime, _HasTable):
     ) -> Tuple[bool, Optional[str], Optional["DatasetInstance"]]:
         """Returns ( target_ext, existing converted dataset )"""
         return self.datatype.find_conversion_destination(
-            self, accepted_formats, _get_datatypes_registry(), **kwd  # type:ignore[arg-type]
+            self,
+            accepted_formats,
+            _get_datatypes_registry(),
         )
 
     def add_validation_error(self, validation_error):
@@ -5172,12 +5179,15 @@ class DatasetInstance(RepresentById, UsesCreateAndUpdateTime, _HasTable):
             rval["file_metadata"] = file_metadata
 
 
-class HistoryDatasetAssociation(DatasetInstance, HasTags, Dictifiable, UsesAnnotations, HasName, Serializable):
+class HistoryDatasetAssociation(
+    DatasetHasHidProtocol, DatasetInstance, HasTags, Dictifiable, UsesAnnotations, HasName, Serializable
+):
     """
     Resource class that creates a relation between a dataset and a user history.
     """
 
     history_id: Optional[int]
+    dataset_id: Mapped[int]
 
     def __init__(
         self,
@@ -5965,7 +5975,7 @@ class LibraryDataset(Base, Serializable):
         return rval
 
 
-class LibraryDatasetDatasetAssociation(DatasetInstance, HasName, Serializable):
+class LibraryDatasetDatasetAssociation(DatasetInstance, HasName, Serializable, UsesCreateAndUpdateTime):
 
     def __init__(
         self,
@@ -6834,10 +6844,10 @@ class HistoryDatasetCollectionAssociation(
     __tablename__ = "history_dataset_collection_association"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    collection_id: Mapped[Optional[int]] = mapped_column(ForeignKey("dataset_collection.id"), index=True)
-    history_id: Mapped[Optional[int]] = mapped_column(ForeignKey("history.id"), index=True)
+    collection_id: Mapped[int] = mapped_column(ForeignKey("dataset_collection.id"), index=True)
+    history_id: Mapped[int] = mapped_column(ForeignKey("history.id"), index=True)
     name: Mapped[Optional[str]] = mapped_column(TrimmedString(255))
-    hid: Mapped[Optional[int]]
+    hid: Mapped[int] = mapped_column(nullable=True)
     visible: Mapped[Optional[bool]]
     deleted: Mapped[Optional[bool]] = mapped_column(default=False)
     copied_from_history_dataset_collection_association_id: Mapped[Optional[int]] = mapped_column(
@@ -6852,7 +6862,7 @@ class HistoryDatasetCollectionAssociation(
     update_time: Mapped[datetime] = mapped_column(default=now, onupdate=now, index=True, nullable=True)
 
     collection = relationship("DatasetCollection")
-    history: Mapped[Optional["History"]] = relationship(back_populates="dataset_collections")
+    history: Mapped["History"] = relationship(back_populates="dataset_collections")
 
     copied_from_history_dataset_collection_association = relationship(
         "HistoryDatasetCollectionAssociation",
@@ -11142,7 +11152,7 @@ class APIKeys(Base, RepresentById):
     id: Mapped[int] = mapped_column(primary_key=True)
     create_time: Mapped[datetime] = mapped_column(default=now, nullable=True)
     user_id: Mapped[Optional[int]] = mapped_column(ForeignKey("galaxy_user.id"), index=True)
-    key: Mapped[Optional[str]] = mapped_column(TrimmedString(32), index=True, unique=True)
+    key: Mapped[str] = mapped_column(TrimmedString(32), index=True, unique=True, nullable=True)
     user: Mapped[Optional["User"]] = relationship(back_populates="api_keys")
     deleted: Mapped[bool] = mapped_column(index=True, server_default=false())
 

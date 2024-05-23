@@ -8,6 +8,7 @@ import os
 from typing import (
     Any,
     Dict,
+    Generic,
     List,
     Optional,
     Type,
@@ -45,7 +46,11 @@ log = logging.getLogger(__name__)
 T = TypeVar("T")
 
 
-class DatasetManager(base.ModelManager[model.Dataset], secured.AccessibleManagerMixin, deletable.PurgableManagerMixin):
+class DatasetManager(
+    base.ModelManager[model.Dataset],
+    secured.AccessibleManagerMixin[model.Dataset],
+    deletable.PurgableManagerMixin[model.Dataset],
+):
     """
     Manipulate datasets: the components contained in DatasetAssociations/DatasetInstances/HDAs/LDDAs
     """
@@ -336,12 +341,16 @@ class DatasetSerializer(base.ModelSerializer[DatasetManager], deletable.Purgable
         return permissions
 
 
+DI = TypeVar("DI", bound=model.DatasetInstance)
+
+
 # ============================================================================= AKA DatasetInstanceManager
 class DatasetAssociationManager(
-    base.ModelManager[model.DatasetInstance],
-    secured.AccessibleManagerMixin,
-    secured.OwnableManagerMixin,
-    deletable.PurgableManagerMixin,
+    Generic[DI],
+    base.ModelManager[DI],
+    secured.AccessibleManagerMixin[DI],
+    secured.OwnableManagerMixin[DI],
+    deletable.PurgableManagerMixin[DI],
 ):
     """
     DatasetAssociation/DatasetInstances are intended to be working
@@ -359,14 +368,14 @@ class DatasetAssociationManager(
         super().__init__(app)
         self.dataset_manager = DatasetManager(app)
 
-    def is_accessible(self, item, user: Optional[model.User], **kwargs: Any) -> bool:
+    def is_accessible(self, item: DI, user: Optional[model.User], **kwargs: Any) -> bool:
         """
         Is this DA accessible to `user`?
         """
         # defer to the dataset
         return self.dataset_manager.is_accessible(item.dataset, user, **kwargs)
 
-    def delete(self, item, flush: bool = True, stop_job: bool = False, **kwargs):
+    def delete(self, item: DI, flush: bool = True, stop_job: bool = False, **kwargs):
         """
         Marks this dataset association as deleted.
         If `stop_job` is True, will stop the creating job if all other outputs are deleted.
@@ -376,7 +385,7 @@ class DatasetAssociationManager(
             self.stop_creating_job(item, flush=flush)
         return item
 
-    def purge(self, dataset_assoc, flush=True):
+    def purge(self, item: DI, flush=True, **kwargs) -> DI:
         """
         Purge this DatasetInstance and the dataset underlying it.
         """
@@ -388,15 +397,15 @@ class DatasetAssociationManager(
         # so that job cleanup associated with stop_creating_job will see
         # the dataset as purged.
         flush_required = not self.app.config.track_jobs_in_database
-        super().purge(dataset_assoc, flush=flush or flush_required)
+        super().purge(item, flush=flush or flush_required)
 
         # stop any jobs outputing the dataset_assoc
-        self.stop_creating_job(dataset_assoc, flush=True)
+        self.stop_creating_job(item, flush=True)
 
         # more importantly, purge underlying dataset as well
-        if dataset_assoc.dataset.user_can_purge:
-            self.dataset_manager.purge(dataset_assoc.dataset)
-        return dataset_assoc
+        if item.dataset.user_can_purge:
+            self.dataset_manager.purge(item.dataset)
+        return item
 
     def by_user(self, user):
         raise exceptions.NotImplemented("Abstract Method")
@@ -486,6 +495,25 @@ class DatasetAssociationManager(
             ]
             rval["modify_item_roles"] = modify_item_role_list
         return rval
+
+    def ensure_dataset_on_disk(self, trans, dataset: DI):
+        # Not a guarantee data is really present, but excludes a lot of expected cases
+        if dataset.purged or dataset.dataset.purged:
+            raise exceptions.ItemDeletionException("The dataset you are attempting to view has been purged.")
+        elif dataset.deleted and not (trans.user_is_admin or self.is_owner(dataset, trans.get_user())):
+            raise exceptions.ItemDeletionException("The dataset you are attempting to view has been deleted.")
+        elif dataset.state == Dataset.states.UPLOAD:
+            raise exceptions.Conflict("Please wait until this dataset finishes uploading before attempting to view it.")
+        elif dataset.state == Dataset.states.DISCARDED:
+            raise exceptions.ItemDeletionException("The dataset you are attempting to view has been discarded.")
+        elif dataset.state == Dataset.states.DEFERRED:
+            raise exceptions.Conflict(
+                "The dataset you are attempting to view has deferred data. You can only use this dataset as input for jobs."
+            )
+        elif dataset.state == Dataset.states.PAUSED:
+            raise exceptions.Conflict(
+                "The dataset you are attempting to view is in paused state. One of the inputs for the job that creates this dataset has failed."
+            )
 
     def ensure_can_change_datatype(self, dataset: model.DatasetInstance, raiseException: bool = True) -> bool:
         if not dataset.datatype.is_datatype_change_allowed():

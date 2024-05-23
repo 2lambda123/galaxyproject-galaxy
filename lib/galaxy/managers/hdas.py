@@ -14,6 +14,7 @@ from typing import (
     List,
     Optional,
     Set,
+    Union,
 )
 
 from sqlalchemy import (
@@ -51,7 +52,6 @@ from galaxy.model import (
 )
 from galaxy.model.base import transaction
 from galaxy.model.deferred import materializer_factory
-from galaxy.schema.schema import DatasetSourceType
 from galaxy.schema.storage_cleaner import (
     CleanableItemsSummary,
     StorageItemCleanupError,
@@ -78,8 +78,8 @@ class HistoryDatasetAssociationNoHistoryException(Exception):
 
 
 class HDAManager(
-    datasets.DatasetAssociationManager,
-    secured.OwnableManagerMixin,
+    datasets.DatasetAssociationManager[model.HistoryDatasetAssociation],
+    secured.OwnableManagerMixin[model.HistoryDatasetAssociation],
     annotatable.AnnotatableManagerMixin,
 ):
     """
@@ -126,7 +126,9 @@ class HDAManager(
         #     return True
         return super().is_accessible(item, user, **kwargs)
 
-    def is_owner(self, item, user: Optional[model.User], current_history=None, **kwargs: Any) -> bool:
+    def is_owner(
+        self, item: model.HistoryDatasetAssociation, user: Optional[model.User], current_history=None, **kwargs: Any
+    ) -> bool:
         """
         Use history to see if current user owns HDA.
         """
@@ -182,8 +184,10 @@ class HDAManager(
             sa_session=self.app.model.session(),
         )
         user = self.user_manager.by_id(request_user.user_id)
-        if request.source == DatasetSourceType.hda:
-            dataset_instance = self.get_accessible(request.content, user)
+        if request.source == "hda":
+            dataset_instance: Union[model.HistoryDatasetAssociation, model.LibraryDatasetDatasetAssociation] = (
+                self.get_accessible(request.content, user)
+            )
         else:
             dataset_instance = self.ldda_manager.get_accessible(request.content, user)
         history = self.app.history_manager.by_id(request.history_id)
@@ -194,7 +198,12 @@ class HDAManager(
             session.commit()
 
     def copy(
-        self, item: Any, history=None, hide_copy: bool = False, flush: bool = True, **kwargs: Any
+        self,
+        item: model.HistoryDatasetAssociation,
+        history=None,
+        hide_copy: bool = False,
+        flush: bool = True,
+        **kwargs: Any,
     ) -> model.HistoryDatasetAssociation:
         """
         Copy hda, including annotation and tags, add to history and return the given HDA.

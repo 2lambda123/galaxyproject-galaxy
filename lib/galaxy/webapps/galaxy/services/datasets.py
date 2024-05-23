@@ -11,6 +11,7 @@ from typing import (
     List,
     Optional,
     Tuple,
+    TypedDict,
     Union,
 )
 
@@ -32,10 +33,7 @@ from galaxy.datatypes.binary import Binary
 from galaxy.datatypes.dataproviders.exceptions import NoProviderAvailable
 from galaxy.managers.base import ModelSerializer
 from galaxy.managers.context import ProvidesHistoryContext
-from galaxy.managers.datasets import (
-    DatasetAssociationManager,
-    DatasetManager,
-)
+from galaxy.managers.datasets import DatasetManager
 from galaxy.managers.hdas import (
     HDAManager,
     HDASerializer,
@@ -286,6 +284,11 @@ class DeleteDatasetBatchResult(Model):
     )
 
 
+class DatasetManagerByType(TypedDict):
+    hda: HDAManager
+    ldda: LDDAManager
+
+
 class DatasetsService(ServiceBase, UsesVisualizationMixin):
     def __init__(
         self,
@@ -316,7 +319,7 @@ class DatasetsService(ServiceBase, UsesVisualizationMixin):
         return {"dataset": self.hda_serializer, "dataset_collection": self.hdca_serializer}
 
     @property
-    def dataset_manager_by_type(self) -> Dict[str, DatasetAssociationManager]:
+    def dataset_manager_by_type(self) -> DatasetManagerByType:
         return {"hda": self.hda_manager, "ldda": self.ldda_manager}
 
     def index(
@@ -391,7 +394,7 @@ class DatasetsService(ServiceBase, UsesVisualizationMixin):
             rval = self._dataset_in_use_state(dataset)
         else:
             # Default: return dataset as dict.
-            if hda_ldda == DatasetSourceType.hda:
+            if hda_ldda == "hda":
                 return self.hda_serializer.serialize_to_view(
                     dataset, view=serialization_params.view or "detailed", user=trans.user, trans=trans
                 )
@@ -404,7 +407,7 @@ class DatasetsService(ServiceBase, UsesVisualizationMixin):
         self,
         trans: ProvidesHistoryContext,
         dataset_id: DecodedDatabaseIdField,
-        hda_ldda: DatasetSourceType = DatasetSourceType.hda,
+        hda_ldda: DatasetSourceType = "hda",
     ) -> DatasetStorageDetails:
         """
         Display user-facing storage details related to the objectstore a
@@ -454,7 +457,7 @@ class DatasetsService(ServiceBase, UsesVisualizationMixin):
         self,
         trans: ProvidesHistoryContext,
         dataset_id: DecodedDatabaseIdField,
-        hda_ldda: DatasetSourceType = DatasetSourceType.hda,
+        hda_ldda: DatasetSourceType = "hda",
     ) -> DatasetInheritanceChain:
         """
         Display inheritance chain for the given dataset.
@@ -472,7 +475,7 @@ class DatasetsService(ServiceBase, UsesVisualizationMixin):
         trans: ProvidesHistoryContext,
         dataset_id: DecodedDatabaseIdField,
         payload: ComputeDatasetHashPayload,
-        hda_ldda: DatasetSourceType = DatasetSourceType.hda,
+        hda_ldda: DatasetSourceType = "hda",
     ) -> AsyncTaskResultSummary:
         dataset_instance = self.dataset_manager_by_type[hda_ldda].get_accessible(dataset_id, trans.user)
         request = ComputeDatasetHashTaskRequest(
@@ -485,12 +488,13 @@ class DatasetsService(ServiceBase, UsesVisualizationMixin):
         return async_task_summary(result)
 
     def drs_dataset_instance(self, object_id: str) -> Tuple[int, DatasetSourceType]:
+        hda_ldda: DatasetSourceType
         if object_id.startswith("hda-"):
             decoded_object_id = self.decode_id(object_id[len("hda-") :], kind="drs")
-            hda_ldda = DatasetSourceType.hda
+            hda_ldda = "hda"
         elif object_id.startswith("ldda-"):
             decoded_object_id = self.decode_id(object_id[len("ldda-") :], kind="drs")
-            hda_ldda = DatasetSourceType.ldda
+            hda_ldda = "ldda"
         else:
             raise galaxy_exceptions.RequestParameterInvalidException(
                 "Invalid object_id format specified for this Galaxy server"
@@ -549,7 +553,7 @@ class DatasetsService(ServiceBase, UsesVisualizationMixin):
         trans: ProvidesHistoryContext,
         dataset_id: DecodedDatabaseIdField,
         payload: UpdateDatasetPermissionsPayload,
-        hda_ldda: DatasetSourceType = DatasetSourceType.hda,
+        hda_ldda: DatasetSourceType = "hda",
     ) -> DatasetAssociationRoles:
         """
         Updates permissions of a dataset.
@@ -587,7 +591,7 @@ class DatasetsService(ServiceBase, UsesVisualizationMixin):
         self,
         trans: ProvidesHistoryContext,
         dataset_id: DecodedDatabaseIdField,
-        hda_ldda: DatasetSourceType = DatasetSourceType.hda,
+        hda_ldda: DatasetSourceType = "hda",
         preview: bool = False,
         filename: Optional[str] = None,
         to_ext: Optional[str] = None,
@@ -606,7 +610,15 @@ class DatasetsService(ServiceBase, UsesVisualizationMixin):
         headers = {}
         rval: Any = ""
         try:
-            dataset_instance = self.dataset_manager_by_type[hda_ldda].get_accessible(dataset_id, trans.user)
+            dataset_instance: Union[model.HistoryDatasetAssociation, model.LibraryDatasetDatasetAssociation]
+            if hda_ldda == "hda":
+                hda_manager = self.dataset_manager_by_type[hda_ldda]
+                dataset_instance = hda = hda_manager.get_accessible(dataset_id, trans.user)
+                hda_manager.ensure_dataset_on_disk(trans, hda)
+            else:
+                ldda_manager = self.dataset_manager_by_type[hda_ldda]
+                dataset_instance = ldda = ldda_manager.get_accessible(dataset_id, trans.user)
+                ldda_manager.ensure_dataset_on_disk(trans, ldda)
             if raw:
                 if filename and filename != "index":
                     object_store = trans.app.object_store
@@ -720,15 +732,23 @@ class DatasetsService(ServiceBase, UsesVisualizationMixin):
         errors: List[DatasetErrorMessage] = []
         for dataset in payload.datasets:
             try:
-                manager = self.dataset_manager_by_type[dataset.src]
-                dataset_instance = manager.get_owned(dataset.id, trans.user)
-                manager.error_unless_mutable(dataset_instance.history)
-                if dataset.src == DatasetSourceType.hda:
-                    self.hda_manager.error_if_uploading(dataset_instance)
-                if payload.purge:
-                    manager.purge(dataset_instance, flush=True)
+                if dataset.src == "hda":
+                    hda_manager = self.dataset_manager_by_type[dataset.src]
+                    hda = hda_manager.get_owned(dataset.id, trans.user)
+                    hda_manager.error_if_uploading(hda)
+                    hda_manager.error_unless_mutable(hda.history)
+                    if payload.purge:
+                        hda_manager.purge(hda, flush=True)
+                    else:
+                        hda_manager.delete(hda, flush=False)
                 else:
-                    manager.delete(dataset_instance, flush=False)
+                    ldda_manager = self.dataset_manager_by_type[dataset.src]
+                    ldda = ldda_manager.get_owned(dataset.id, trans.user)
+                    if payload.purge:
+                        ldda_manager.purge(ldda, flush=True)
+                    else:
+                        ldda_manager.delete(ldda, flush=False)
+
                 success_count += 1
             except galaxy_exceptions.MessageException as e:
                 errors.append(

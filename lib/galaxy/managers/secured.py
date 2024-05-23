@@ -6,41 +6,38 @@ Owned models can be modified and deleted.
 
 from typing import (
     Any,
+    Generic,
+    List,
     Optional,
-    Type,
-    TYPE_CHECKING,
 )
 
 from galaxy import (
     exceptions,
     model,
 )
+from galaxy.managers.base import (
+    HasById,
+    HasModelClass,
+    U,
+)
 
-if TYPE_CHECKING:
-    from sqlalchemy.orm import Query
 
-
-class AccessibleManagerMixin:
+class AccessibleManagerMixin(Generic[U], HasModelClass[U], HasById[U]):
     """
     A security interface to check if a User can read/view an item's.
 
     This can also be thought of as 'read but not modify' privileges.
     """
 
-    # declare what we are using from base ModelManager
-    model_class: Type[Any]
-
-    def by_id(self, id: int): ...
-
     # don't want to override by_id since consumers will also want to fetch w/o any security checks
-    def is_accessible(self, item, user: model.User, **kwargs: Any) -> bool:
+    def is_accessible(self, item: U, user: model.User, **kwargs: Any) -> bool:
         """
         Return True if the item accessible to user.
         """
         # override in subclasses
         raise exceptions.NotImplemented("Abstract interface Method")
 
-    def get_accessible(self, id: int, user: model.User, **kwargs: Any):
+    def get_accessible(self, id: int, user: model.User, **kwargs: Any) -> U:
         """
         Return the item with the given id if it's accessible to user,
         otherwise raise an error.
@@ -50,7 +47,7 @@ class AccessibleManagerMixin:
         item = self.by_id(id)
         return self.error_unless_accessible(item, user, **kwargs)
 
-    def error_unless_accessible(self, item: "Query", user, **kwargs):
+    def error_unless_accessible(self, item: U, user, **kwargs) -> U:
         """
         Raise an error if the item is NOT accessible to user, otherwise return the item.
 
@@ -61,7 +58,7 @@ class AccessibleManagerMixin:
         raise exceptions.ItemAccessibilityException(f"{self.model_class.__name__} is not accessible by user")
 
     # TODO:?? are these even useful?
-    def list_accessible(self, user, **kwargs):
+    def list_accessible(self, user, **kwargs) -> List[U]:
         """
         Return a list of items accessible to the user, raising an error if ANY
         are inaccessible.
@@ -73,7 +70,7 @@ class AccessibleManagerMixin:
         # items = ModelManager.list( self, trans, **kwargs )
         # return [ self.error_unless_accessible( trans, item, user ) for item in items ]
 
-    def filter_accessible(self, user, **kwargs):
+    def filter_accessible(self, user, **kwargs) -> List[U]:
         """
         Return a list of items accessible to the user.
         """
@@ -83,7 +80,7 @@ class AccessibleManagerMixin:
         # return filter( lambda item: self.is_accessible( trans, item, user ), items )
 
 
-class OwnableManagerMixin:
+class OwnableManagerMixin(Generic[U], HasModelClass[U]):
     """
     A security interface to check if a User is an item's owner.
 
@@ -93,19 +90,16 @@ class OwnableManagerMixin:
     This can also be thought of as write/edit privileges.
     """
 
-    # declare what we are using from base ModelManager
-    model_class: Type[Any]
-
     def by_id(self, id: int): ...
 
-    def is_owner(self, item: model.Base, user: Optional[model.User], **kwargs: Any) -> bool:
+    def is_owner(self, item: U, user: Optional[model.User], **kwargs: Any) -> bool:
         """
         Return True if user owns the item.
         """
         # override in subclasses
         raise exceptions.NotImplemented("Abstract interface Method")
 
-    def get_owned(self, id: int, user: Optional[model.User], **kwargs: Any) -> Any:
+    def get_owned(self, id: int, user: Optional[model.User], **kwargs: Any) -> U:
         """
         Return the item with the given id if owned by the user,
         otherwise raise an error.
@@ -115,7 +109,7 @@ class OwnableManagerMixin:
         item = self.by_id(id)
         return self.error_unless_owner(item, user, **kwargs)
 
-    def error_unless_owner(self, item, user: Optional[model.User], **kwargs: Any):
+    def error_unless_owner(self, item: U, user: Optional[model.User], **kwargs: Any) -> U:
         """
         Raise an error if the item is NOT owned by user, otherwise return the item.
 
@@ -125,7 +119,7 @@ class OwnableManagerMixin:
             return item
         raise exceptions.ItemOwnershipException(f"{self.model_class.__name__} is not owned by user")
 
-    def list_owned(self, user, **kwargs):
+    def list_owned(self, user, **kwargs) -> List[U]:
         """
         Return a list of items owned by the user, raising an error if ANY
         are not.
@@ -136,14 +130,14 @@ class OwnableManagerMixin:
         # just alias to by_user (easier/same thing)
         # return self.by_user( trans, user, **kwargs )
 
-    def filter_owned(self, user, **kwargs):
+    def filter_owned(self, user, **kwargs) -> List[U]:
         """
         Return a list of items owned by the user.
         """
         # just alias to list_owned
         return self.list_owned(user, **kwargs)
 
-    def get_mutable(self, id: int, user: Optional[model.User], **kwargs: Any) -> Any:
+    def get_mutable(self, id: int, user: Optional[model.User], **kwargs: Any) -> U:
         """
         Return the item with the given id if the user can mutate it,
         otherwise raise an error. The user must be the owner of the item.
@@ -154,7 +148,7 @@ class OwnableManagerMixin:
         self.error_unless_mutable(item)
         return item
 
-    def error_unless_mutable(self, item):
+    def error_unless_mutable(self, item: U) -> None:
         """
         Raise an error if the item is NOT mutable.
 
