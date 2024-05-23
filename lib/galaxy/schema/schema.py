@@ -3741,3 +3741,16 @@ class DatasetSummary(Model):
     file_size: int
     total_size: int
     uuid: UuidField
+
+
+class ValidationErrorModel(BaseModel):
+    type: str
+    loc: List[int]
+    msg: str
+    input: Any
+
+
+class MessageExceptionModel(BaseModel):
+    err_msg: str
+    err_code: int
+    validation_errors: List[ValidationErrorModel]

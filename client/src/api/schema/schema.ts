@@ -9534,6 +9534,15 @@ export interface components {
              */
             source: components["schemas"]["DatasetSourceType"];
         };
+        /** MessageExceptionModel */
+        MessageExceptionModel: {
+            /** Err Code */
+            err_code: number;
+            /** Err Msg */
+            err_msg: string;
+            /** Validation Errors */
+            validation_errors: components["schemas"]["ValidationErrorModel"][];
+        };
         /** MessageNotificationContent */
         MessageNotificationContent: {
             /**
@@ -12990,6 +12999,17 @@ export interface components {
             /** Error Type */
             type: string;
         };
+        /** ValidationErrorModel */
+        ValidationErrorModel: {
+            /** Input */
+            input: Record<string, never>;
+            /** Loc */
+            loc: number[];
+            /** Msg */
+            msg: string;
+            /** Type */
+            type: string;
+        };
         /** Visualization */
         Visualization: Record<string, never>;
         /** VisualizationSummary */
@@ -13451,6 +13471,12 @@ export interface operations {
                     "application/json": components["schemas"]["APIKeyResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
         };
     };
     get_api_cloud_storage_get_post: {
@@ -13474,6 +13500,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["DatasetSummaryList"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -13505,6 +13537,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["CloudDatasetsResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -13543,6 +13581,12 @@ export interface operations {
                     "application/json": Record<string, never>;
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -13575,6 +13619,12 @@ export interface operations {
                     };
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -13601,6 +13651,12 @@ export interface operations {
                     "application/json": {
                         [key: string]: string | undefined;
                     }[];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -13635,6 +13691,12 @@ export interface operations {
                     };
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -13663,6 +13725,12 @@ export interface operations {
                     }[];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -13687,6 +13755,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": Record<string, never>;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -13716,6 +13790,12 @@ export interface operations {
                     "application/json": components["schemas"]["DCESummary"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -13742,6 +13822,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["HDCADetailed"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -13781,6 +13867,12 @@ export interface operations {
                     "application/json": components["schemas"]["DatasetCollectionContentElements"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -13814,6 +13906,12 @@ export interface operations {
                     "application/json": components["schemas"]["HDCADetailed"] | components["schemas"]["HDCASummary"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -13843,6 +13941,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["DatasetCollectionAttributesResult"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -13877,6 +13981,12 @@ export interface operations {
                     "application/json": Record<string, never>;
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -13904,6 +14014,12 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -13934,6 +14050,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["AsyncFile"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -13967,6 +14089,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["SuitableConverters"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -14016,6 +14144,12 @@ export interface operations {
                     )[];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -14047,6 +14181,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["DeleteDatasetBatchResult"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -14089,6 +14229,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": Record<string, never>;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -14135,6 +14281,12 @@ export interface operations {
                         | components["schemas"]["HDASummary"]
                         | components["schemas"]["HDCADetailed"]
                         | components["schemas"]["HDCASummary"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -14201,6 +14353,12 @@ export interface operations {
                     "application/json": components["schemas"]["DeleteHistoryContentResult"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -14227,6 +14385,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": Record<string, never>;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -14257,6 +14421,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["ConvertedDatasetsMap"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -14304,6 +14474,12 @@ export interface operations {
                         | components["schemas"]["HDASummary"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -14331,6 +14507,12 @@ export interface operations {
                     "application/json": components["schemas"]["DatasetExtraFiles"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -14356,6 +14538,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["DatasetTextContentDetails"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -14394,6 +14582,12 @@ export interface operations {
                     "application/json": components["schemas"]["AsyncTaskResultSummary"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -14423,6 +14617,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["DatasetInheritanceChain"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -14459,6 +14659,12 @@ export interface operations {
                     "application/json": (components["schemas"]["JobMetric"] | null)[];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -14489,6 +14695,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": Record<string, never>;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -14528,6 +14740,12 @@ export interface operations {
                     "application/json": components["schemas"]["JobDisplayParametersSummary"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -14563,6 +14781,12 @@ export interface operations {
                     "application/json": components["schemas"]["DatasetAssociationRoles"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -14592,6 +14816,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["DatasetStorageDetails"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -14634,6 +14864,12 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -14678,6 +14914,12 @@ export interface operations {
                     "application/json": Record<string, never>;
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -14705,6 +14947,12 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -14736,6 +14984,12 @@ export interface operations {
                     "application/json": Record<string, never>;
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -14764,6 +15018,12 @@ export interface operations {
                     "application/json": components["schemas"]["DatatypeDetails"][] | string[];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -14784,6 +15044,12 @@ export interface operations {
                     "application/json": components["schemas"]["DatatypeConverterList"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
         };
     };
     edam_data_api_datatypes_edam_data_get: {
@@ -14800,6 +15066,12 @@ export interface operations {
                     };
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
         };
     };
     edam_data_detailed_api_datatypes_edam_data_detailed_get: {
@@ -14813,6 +15085,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["DatatypesEDAMDetailsDict"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
         };
@@ -14831,6 +15109,12 @@ export interface operations {
                     };
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
         };
     };
     edam_formats_detailed_api_datatypes_edam_formats_detailed_get: {
@@ -14844,6 +15128,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["DatatypesEDAMDetailsDict"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
         };
@@ -14860,6 +15150,12 @@ export interface operations {
                     "application/json": components["schemas"]["DatatypesMap"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
         };
     };
     sniffers_api_datatypes_sniffers_get: {
@@ -14872,6 +15168,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": string[];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
         };
@@ -14898,6 +15200,12 @@ export interface operations {
                     "application/json": components["schemas"]["DatatypesCombinedMap"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -14916,6 +15224,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["DisplayApplication"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
         };
@@ -14945,6 +15259,12 @@ export interface operations {
                     "application/json": components["schemas"]["ReloadFeedback"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -14968,6 +15288,12 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -15209,6 +15535,12 @@ export interface operations {
                     "application/json": components["schemas"]["LibraryFolderContentsIndexResult"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -15241,6 +15573,12 @@ export interface operations {
                     "application/json": Record<string, never>;
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -15269,6 +15607,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["LibraryFolderDetails"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -15306,6 +15650,12 @@ export interface operations {
                     "application/json": components["schemas"]["LibraryFolderDetails"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -15339,6 +15689,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["LibraryFolderDetails"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -15375,6 +15731,12 @@ export interface operations {
                     "application/json": components["schemas"]["LibraryFolderDetails"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -15408,6 +15770,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["LibraryFolderDetails"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -15453,6 +15821,12 @@ export interface operations {
                         | components["schemas"]["LibraryAvailablePermissions"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -15492,6 +15866,12 @@ export interface operations {
                     "application/json": components["schemas"]["LibraryFolderCurrentPermissions"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -15518,6 +15898,12 @@ export interface operations {
                     "application/json": Record<string, never>;
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -15542,6 +15928,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": Record<string, never>;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -15585,6 +15977,12 @@ export interface operations {
                         | components["schemas"]["ListJstreeResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -15610,6 +16008,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": string[][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -15653,6 +16057,12 @@ export interface operations {
                     "application/json": Record<string, never>;
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -15684,6 +16094,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": Record<string, never>;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -15725,6 +16141,12 @@ export interface operations {
                     "application/json": Record<string, never>;
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -15746,6 +16168,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["GroupListResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -15776,6 +16204,12 @@ export interface operations {
                     "application/json": components["schemas"]["GroupListResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -15800,6 +16234,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["GroupResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -15833,6 +16273,12 @@ export interface operations {
                     "application/json": components["schemas"]["GroupResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -15857,6 +16303,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": Record<string, never>;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -15885,6 +16337,12 @@ export interface operations {
                     "application/json": Record<string, never>;
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -15910,6 +16368,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["GroupRoleListResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -15941,6 +16405,12 @@ export interface operations {
                     "application/json": components["schemas"]["GroupRoleResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -15968,6 +16438,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["GroupRoleResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -15999,6 +16475,12 @@ export interface operations {
                     "application/json": components["schemas"]["GroupRoleResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -16023,6 +16505,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": Record<string, never>;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -16055,6 +16543,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["GroupUserResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -16090,6 +16584,12 @@ export interface operations {
                     "application/json": components["schemas"]["GroupUserResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -16123,6 +16623,12 @@ export interface operations {
                     "application/json": components["schemas"]["GroupUserResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -16152,6 +16658,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["GroupUserListResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -16184,6 +16696,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["GroupUserResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -16219,6 +16737,12 @@ export interface operations {
                     "application/json": components["schemas"]["GroupUserResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -16252,6 +16776,12 @@ export interface operations {
                     "application/json": components["schemas"]["GroupUserResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -16282,6 +16812,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["HelpForumSearchResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -16377,6 +16913,12 @@ export interface operations {
                     )[];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -16416,6 +16958,12 @@ export interface operations {
                         | components["schemas"]["CustomHistoryView"]
                         | components["schemas"]["HistoryDetailed"]
                         | components["schemas"]["HistorySummary"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -16466,6 +17014,12 @@ export interface operations {
                     )[];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -16503,6 +17057,12 @@ export interface operations {
                         | components["schemas"]["HistoryDetailed"]
                         | components["schemas"]["HistorySummary"]
                     )[];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -16543,6 +17103,12 @@ export interface operations {
                     )[];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -16564,6 +17130,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": number;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -16611,6 +17183,12 @@ export interface operations {
                     )[];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -16645,6 +17223,12 @@ export interface operations {
                         | components["schemas"]["CustomHistoryView"]
                         | components["schemas"]["HistoryDetailed"]
                         | components["schemas"]["HistorySummary"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -16684,6 +17268,12 @@ export interface operations {
                         | components["schemas"]["HistorySummary"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -16710,6 +17300,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["AsyncTaskResultSummary"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -16742,6 +17338,12 @@ export interface operations {
                         | components["schemas"]["CustomHistoryView"]
                         | components["schemas"]["HistoryDetailed"]
                         | components["schemas"]["HistorySummary"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -16787,6 +17389,12 @@ export interface operations {
                     )[];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -16830,6 +17438,12 @@ export interface operations {
                     )[];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -16864,6 +17478,12 @@ export interface operations {
                         | components["schemas"]["CustomHistoryView"]
                         | components["schemas"]["HistoryDetailed"]
                         | components["schemas"]["HistorySummary"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -16907,6 +17527,12 @@ export interface operations {
                         | components["schemas"]["HistorySummary"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -16947,6 +17573,12 @@ export interface operations {
                         | components["schemas"]["CustomHistoryView"]
                         | components["schemas"]["HistoryDetailed"]
                         | components["schemas"]["HistorySummary"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -17000,6 +17632,12 @@ export interface operations {
                         | Record<string, never>;
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -17043,6 +17681,12 @@ export interface operations {
                         | components["schemas"]["HistorySummary"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -17068,6 +17712,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": Record<string, never>[];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -17151,6 +17801,12 @@ export interface operations {
                     "application/vnd.galaxy.history.contents.stats+json": components["schemas"]["HistoryContentsWithStatsResult"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -17193,6 +17849,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["HistoryContentsResult"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -17251,6 +17913,12 @@ export interface operations {
                           )[];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -17297,6 +17965,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": Record<string, never>;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -17352,6 +18026,12 @@ export interface operations {
                     "application/json": Record<string, never>;
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -17395,6 +18075,12 @@ export interface operations {
                     "application/json": components["schemas"]["HistoryContentBulkOperationResult"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -17424,6 +18110,12 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -17451,6 +18143,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["AsyncTaskResultSummary"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -17488,6 +18186,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["DatasetAssociationRoles"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -17531,6 +18235,12 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -17576,6 +18286,12 @@ export interface operations {
                     "application/json": Record<string, never>;
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -17603,6 +18319,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["DatasetExtraFiles"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -17634,6 +18356,12 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -17659,6 +18387,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["ItemTagsListResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -17687,6 +18421,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["ItemTagsResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -17722,6 +18462,12 @@ export interface operations {
                     "application/json": components["schemas"]["ItemTagsResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -17755,6 +18501,12 @@ export interface operations {
                     "application/json": components["schemas"]["ItemTagsResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -17781,6 +18533,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": boolean;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -17833,6 +18591,12 @@ export interface operations {
                         | components["schemas"]["HDCASummary"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -17882,6 +18646,12 @@ export interface operations {
                         | components["schemas"]["HDASummary"]
                         | components["schemas"]["HDCADetailed"]
                         | components["schemas"]["HDCASummary"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -17952,6 +18722,12 @@ export interface operations {
                     "application/json": components["schemas"]["DeleteHistoryContentResult"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -17982,6 +18758,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": Record<string, never>;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -18068,6 +18850,12 @@ export interface operations {
                         | components["schemas"]["HistoryContentsWithStatsResult"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -18123,6 +18911,12 @@ export interface operations {
                           )[];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -18170,6 +18964,12 @@ export interface operations {
                         | components["schemas"]["HDASummary"]
                         | components["schemas"]["HDCADetailed"]
                         | components["schemas"]["HDCASummary"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -18220,6 +19020,12 @@ export interface operations {
                         | components["schemas"]["HDASummary"]
                         | components["schemas"]["HDCADetailed"]
                         | components["schemas"]["HDCASummary"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -18290,6 +19096,12 @@ export interface operations {
                     "application/json": components["schemas"]["DeleteHistoryContentResult"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -18332,6 +19144,12 @@ export interface operations {
                         | components["schemas"]["WorkflowInvocationStateSummary"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -18368,6 +19186,12 @@ export interface operations {
                     "application/json": components["schemas"]["AsyncFile"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -18402,6 +19226,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["AsyncTaskResultSummary"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -18454,6 +19284,12 @@ export interface operations {
                     )[];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -18479,6 +19315,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["CustomBuildsMetadataResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -18511,6 +19353,12 @@ export interface operations {
                     "application/json": components["schemas"]["SharingStatus"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -18539,6 +19387,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["SharingStatus"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -18578,6 +19432,12 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["JobExportHistoryArchiveListResponse"];
                     "application/vnd.galaxy.task.export+json": components["schemas"]["ExportTaskListResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -18631,6 +19491,12 @@ export interface operations {
             };
             /** @description The exported archive file is not ready yet. */
             202: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -18665,6 +19531,12 @@ export interface operations {
         responses: {
             /** @description The archive file containing the History. */
             200: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -18710,6 +19582,12 @@ export interface operations {
                     )[];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -18740,6 +19618,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["AsyncTaskResultSummary"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -18774,6 +19658,12 @@ export interface operations {
                     "application/json": components["schemas"]["AsyncFile"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -18802,6 +19692,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["SharingStatus"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -18839,6 +19735,12 @@ export interface operations {
                     "application/json": components["schemas"]["ShareHistoryWithStatus"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -18867,6 +19769,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["SharingStatus"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -18900,6 +19808,12 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             204: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -18924,6 +19838,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["ItemTagsListResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -18951,6 +19871,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["ItemTagsResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -18985,6 +19911,12 @@ export interface operations {
                     "application/json": components["schemas"]["ItemTagsResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -19017,6 +19949,12 @@ export interface operations {
                     "application/json": components["schemas"]["ItemTagsResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -19042,6 +19980,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": boolean;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -19074,6 +20018,12 @@ export interface operations {
                     "application/json": components["schemas"]["SharingStatus"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -19104,6 +20054,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["AsyncTaskResultSummary"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -19156,6 +20112,12 @@ export interface operations {
                     "application/json": components["schemas"]["WorkflowInvocationResponse"][];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -19187,6 +20149,12 @@ export interface operations {
                     "application/json": components["schemas"]["WorkflowInvocationResponse"][];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -19212,6 +20180,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["InvocationStep"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -19252,6 +20226,12 @@ export interface operations {
                     "application/json": components["schemas"]["WorkflowInvocationResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -19290,6 +20270,12 @@ export interface operations {
                     "application/json": components["schemas"]["WorkflowInvocationResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -19321,6 +20307,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["InvocationJobsResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -19355,6 +20347,12 @@ export interface operations {
                     "application/json": components["schemas"]["AsyncFile"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -19382,6 +20380,12 @@ export interface operations {
                     "application/json": components["schemas"]["InvocationReport"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -19405,6 +20409,12 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -19442,6 +20452,12 @@ export interface operations {
                     )[];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -19472,6 +20488,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["InvocationStep"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -19508,6 +20530,12 @@ export interface operations {
                     "application/json": components["schemas"]["InvocationStep"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -19540,6 +20568,12 @@ export interface operations {
                     "application/json": components["schemas"]["AsyncTaskResultSummary"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -19564,6 +20598,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["JobLock"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -19595,6 +20635,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["JobLock"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -19693,6 +20739,12 @@ export interface operations {
                     )[];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -19724,6 +20776,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["EncodedJobDetails"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -19759,6 +20817,12 @@ export interface operations {
                         | components["schemas"]["EncodedJobDetails"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -19791,6 +20855,12 @@ export interface operations {
                     "application/json": boolean;
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -19818,6 +20888,12 @@ export interface operations {
                     "application/json": components["schemas"]["JobInputSummary"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -19843,6 +20919,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["JobDestinationParams"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -19877,6 +20959,12 @@ export interface operations {
                     "application/json": components["schemas"]["JobErrorSummary"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -19902,6 +20990,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["JobInputAssociation"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -19936,6 +21030,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": (components["schemas"]["JobMetric"] | null)[];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -19973,6 +21073,12 @@ export interface operations {
                     "text/plain": string;
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "text/plain": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -19998,6 +21104,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["JobOutputAssociation"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -20039,6 +21151,12 @@ export interface operations {
                     "application/json": components["schemas"]["JobDisplayParametersSummary"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -20064,6 +21182,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["JobOutputAssociation"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -20094,6 +21218,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["LibrarySummaryList"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -20127,6 +21257,12 @@ export interface operations {
                     "application/json": components["schemas"]["LibrarySummary"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -20151,6 +21287,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["LibrarySummaryList"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -20181,6 +21323,12 @@ export interface operations {
                     "application/json": components["schemas"]["LibrarySummary"][];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -20209,6 +21357,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["LibrarySummary"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -20251,6 +21405,12 @@ export interface operations {
                     "application/json": components["schemas"]["LibrarySummary"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -20284,6 +21444,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["LibrarySummary"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -20331,6 +21497,12 @@ export interface operations {
                         | components["schemas"]["LibraryAvailablePermissions"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -20374,6 +21546,12 @@ export interface operations {
                         | components["schemas"]["LibraryCurrentPermissions"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -20392,6 +21570,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["LicenseMetadataModel"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
         };
@@ -20413,6 +21597,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["LicenseMetadataModel"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -20444,6 +21634,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": Record<string, never>;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -20478,6 +21674,12 @@ export interface operations {
                     "application/json": components["schemas"]["UserNotificationListResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -20504,6 +21706,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["NotificationsBatchUpdateResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -20539,6 +21747,12 @@ export interface operations {
                         | components["schemas"]["AsyncTaskResultSummary"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -20567,6 +21781,12 @@ export interface operations {
                     "application/json": components["schemas"]["NotificationsBatchUpdateResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -20591,6 +21811,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["BroadcastNotificationListResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -20635,6 +21861,12 @@ export interface operations {
                     "application/json": components["schemas"]["NotificationCreatedResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -20663,6 +21895,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["BroadcastNotificationResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -20696,6 +21934,12 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             204: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -20723,6 +21967,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["UserNotificationPreferences"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -20759,6 +22009,12 @@ export interface operations {
                     "application/json": components["schemas"]["UserNotificationPreferences"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -20788,6 +22044,12 @@ export interface operations {
                     "application/json": components["schemas"]["NotificationStatusSummary"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -20813,6 +22075,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["UserNotificationResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -20843,6 +22111,12 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             204: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -20873,6 +22147,12 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             204: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -21090,6 +22370,12 @@ export interface operations {
                     )[];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -21115,6 +22401,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["ConcreteObjectStoreModel"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -21194,6 +22486,12 @@ export interface operations {
                     "application/json": components["schemas"]["PageSummaryList"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -21223,6 +22521,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["PageSummary"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -21255,6 +22559,12 @@ export interface operations {
                     "application/json": components["schemas"]["PageDetails"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -21281,6 +22591,12 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             204: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -21311,6 +22627,12 @@ export interface operations {
             200: {
                 content: {
                     "application/pdf": unknown;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -21345,6 +22667,12 @@ export interface operations {
                     "application/json": components["schemas"]["SharingStatus"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -21373,6 +22701,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["SharingStatus"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -21407,6 +22741,12 @@ export interface operations {
                     "application/json": components["schemas"]["AsyncFile"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -21437,6 +22777,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["SharingStatus"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -21474,6 +22820,12 @@ export interface operations {
                     "application/json": components["schemas"]["ShareWithStatus"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -21502,6 +22854,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["SharingStatus"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -21535,6 +22893,12 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             204: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -21561,6 +22925,12 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             204: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -21591,6 +22961,12 @@ export interface operations {
                     "application/json": components["schemas"]["SharingStatus"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -21615,6 +22991,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["QuotaSummaryList"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -21648,6 +23030,12 @@ export interface operations {
                     "application/json": components["schemas"]["CreateQuotaResult"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -21672,6 +23060,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["QuotaSummaryList"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -21704,6 +23098,12 @@ export interface operations {
                     "application/json": components["schemas"]["QuotaDetails"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -21734,6 +23134,12 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -21762,6 +23168,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["QuotaDetails"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -21799,6 +23211,12 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -21834,6 +23252,12 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -21859,6 +23283,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": string;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -21901,6 +23331,12 @@ export interface operations {
                         | components["schemas"]["ListJstreeResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -21930,6 +23366,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["CreatedEntryResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -21966,6 +23408,12 @@ export interface operations {
                     "application/json": components["schemas"]["FilesSourcePluginList"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -21987,6 +23435,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["RoleListResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -22017,6 +23471,12 @@ export interface operations {
                     "application/json": components["schemas"]["RoleModelResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -22041,6 +23501,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["RoleModelResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -22069,6 +23535,12 @@ export interface operations {
                     "application/json": components["schemas"]["RoleModelResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -22093,6 +23565,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["RoleModelResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -22121,6 +23599,12 @@ export interface operations {
                     "application/json": components["schemas"]["RoleModelResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -22141,6 +23625,12 @@ export interface operations {
             200: never;
             /** @description Request was cancelled without an exception condition recorded. */
             204: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -22161,6 +23651,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": boolean;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -22194,6 +23690,12 @@ export interface operations {
                     "application/json": components["schemas"]["StorageItemsCleanupResult"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -22225,6 +23727,12 @@ export interface operations {
                     "application/json": components["schemas"]["StoredItem"][];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -22246,6 +23754,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["CleanableItemsSummary"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -22279,6 +23793,12 @@ export interface operations {
                     "application/json": components["schemas"]["StorageItemsCleanupResult"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -22310,6 +23830,12 @@ export interface operations {
                     "application/json": components["schemas"]["StoredItem"][];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -22331,6 +23857,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["CleanableItemsSummary"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -22364,6 +23896,12 @@ export interface operations {
                     "application/json": components["schemas"]["StoredItem"][];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -22385,6 +23923,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["CleanableItemsSummary"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -22417,6 +23961,12 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             204: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -22439,6 +23989,12 @@ export interface operations {
                     "application/json": components["schemas"]["TaskState"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -22457,6 +24013,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["ToolDataEntryList"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
         };
@@ -22482,6 +24044,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["AsyncTaskResultSummary"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -22512,6 +24080,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["ToolDataDetails"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -22549,6 +24123,12 @@ export interface operations {
                     "application/json": components["schemas"]["ToolDataDetails"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -22581,6 +24161,12 @@ export interface operations {
                     "application/json": components["schemas"]["ToolDataField"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -22611,6 +24197,12 @@ export interface operations {
         responses: {
             /** @description Information about a data table field */
             200: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -22639,6 +24231,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["ToolDataDetails"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -22672,6 +24270,12 @@ export interface operations {
                     "application/json": components["schemas"]["InstalledToolShedRepository"][];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -22698,6 +24302,12 @@ export interface operations {
                     "application/json": components["schemas"]["CheckForUpdatesResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -22719,6 +24329,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["InstalledToolShedRepository"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -22749,6 +24365,12 @@ export interface operations {
                     "application/json": Record<string, never>;
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -22769,6 +24391,12 @@ export interface operations {
                     "application/json": components["schemas"]["TourList"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
         };
     };
     show_api_tours__tour_id__get: {
@@ -22786,6 +24414,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["TourDetails"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -22815,6 +24449,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["TourDetails"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -22856,6 +24496,12 @@ export interface operations {
                     )[];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -22884,6 +24530,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["CreatedUserModel"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -22916,6 +24568,12 @@ export interface operations {
             };
             /** @description The background task was submitted but there is no status tracking ID available. */
             204: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -22953,6 +24611,12 @@ export interface operations {
                     )[];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -22982,6 +24646,12 @@ export interface operations {
                         | components["schemas"]["AnonUserModel"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -23007,6 +24677,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["DetailedUserModel"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -23040,6 +24716,12 @@ export interface operations {
             };
             /** @description The background task was submitted but there is no status tracking ID available. */
             204: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -23071,6 +24753,12 @@ export interface operations {
                     "application/json":
                         | components["schemas"]["DetailedUserModel"]
                         | components["schemas"]["AnonUserModel"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -23109,6 +24797,12 @@ export interface operations {
                     "application/json": components["schemas"]["DetailedUserModel"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -23145,6 +24839,12 @@ export interface operations {
                     "application/json": components["schemas"]["DetailedUserModel"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -23170,6 +24870,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": string;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -23199,6 +24905,12 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -23222,6 +24934,12 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             204: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -23251,6 +24969,12 @@ export interface operations {
             };
             /** @description The user doesn't have an API key. */
             204: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -23279,6 +25003,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["UserBeaconSetting"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -23316,6 +25046,12 @@ export interface operations {
                     "application/json": components["schemas"]["UserBeaconSetting"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -23341,6 +25077,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["CustomBuildsCollection"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -23377,6 +25119,12 @@ export interface operations {
                     "application/json": Record<string, never>;
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -23404,6 +25152,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["DeletedCustomBuild"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -23440,6 +25194,12 @@ export interface operations {
                     "application/json": components["schemas"]["FavoriteObjectsSummary"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -23471,6 +25231,12 @@ export interface operations {
                     "application/json": components["schemas"]["FavoriteObjectsSummary"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -23496,6 +25262,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["UserObjectstoreUsage"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -23527,6 +25299,12 @@ export interface operations {
             };
             /** @description The background task was submitted but there is no status tracking ID available. */
             204: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -23552,6 +25330,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": Record<string, never>;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -23583,6 +25367,12 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -23608,6 +25398,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["UserQuotaUsage"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -23639,6 +25435,12 @@ export interface operations {
                     "application/json": components["schemas"]["UserQuotaUsage"] | null;
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -23657,6 +25459,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": Record<string, never>;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
         };
@@ -23729,6 +25537,12 @@ export interface operations {
                     "application/json": components["schemas"]["VisualizationSummaryList"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -23757,6 +25571,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["SharingStatus"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -23789,6 +25609,12 @@ export interface operations {
                     "application/json": components["schemas"]["SharingStatus"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -23817,6 +25643,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["SharingStatus"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -23854,6 +25686,12 @@ export interface operations {
                     "application/json": components["schemas"]["ShareWithStatus"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -23882,6 +25720,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["SharingStatus"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -23915,6 +25759,12 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             204: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -23945,6 +25795,12 @@ export interface operations {
                     "application/json": components["schemas"]["SharingStatus"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -23969,6 +25825,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["UserModel"] | null;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -24055,6 +25917,12 @@ export interface operations {
                     "application/json": Record<string, never>[];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -24086,6 +25954,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": Record<string, never>;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -24122,6 +25996,12 @@ export interface operations {
                     "application/json": components["schemas"]["StoredWorkflowDetailed"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -24147,6 +26027,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": Record<string, never>;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -24180,6 +26066,12 @@ export interface operations {
                     "application/json": components["schemas"]["RootModel_Dict_str__int__"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -24210,6 +26102,12 @@ export interface operations {
                     "application/json": components["schemas"]["SharingStatus"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -24238,6 +26136,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["SharingStatus"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -24291,6 +26195,12 @@ export interface operations {
                     "application/json": components["schemas"]["WorkflowInvocationResponse"][];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -24323,6 +26233,12 @@ export interface operations {
                     "application/json":
                         | components["schemas"]["WorkflowInvocationResponse"]
                         | components["schemas"]["WorkflowInvocationResponse"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -24368,6 +26284,12 @@ export interface operations {
                     "application/json": components["schemas"]["WorkflowInvocationResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -24411,6 +26333,12 @@ export interface operations {
                     "application/json": components["schemas"]["WorkflowInvocationResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -24441,6 +26369,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["InvocationJobsResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -24475,6 +26409,12 @@ export interface operations {
                     "application/json": components["schemas"]["InvocationReport"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -24503,6 +26443,12 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -24539,6 +26485,12 @@ export interface operations {
                     )[];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -24571,6 +26523,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["InvocationStep"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -24612,6 +26570,12 @@ export interface operations {
                     "application/json": components["schemas"]["InvocationStep"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -24640,6 +26604,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["SharingStatus"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -24677,6 +26647,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefactorResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -24712,6 +26688,12 @@ export interface operations {
                     "application/json": components["schemas"]["ShareWithStatus"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -24740,6 +26722,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["SharingStatus"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -24773,6 +26761,12 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             204: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -24797,6 +26791,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["ItemTagsListResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -24824,6 +26824,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["ItemTagsResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -24858,6 +26864,12 @@ export interface operations {
                     "application/json": components["schemas"]["ItemTagsResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -24890,6 +26902,12 @@ export interface operations {
                     "application/json": components["schemas"]["ItemTagsResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -24917,6 +26935,12 @@ export interface operations {
                     "application/json": boolean;
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -24942,6 +26966,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": Record<string, never>;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -24972,6 +27002,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["SharingStatus"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -25028,6 +27064,12 @@ export interface operations {
                     "application/json": components["schemas"]["WorkflowInvocationResponse"][];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -25063,6 +27105,12 @@ export interface operations {
                     "application/json":
                         | components["schemas"]["WorkflowInvocationResponse"]
                         | components["schemas"]["WorkflowInvocationResponse"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -25109,6 +27157,12 @@ export interface operations {
                     "application/json": components["schemas"]["WorkflowInvocationResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -25153,6 +27207,12 @@ export interface operations {
                     "application/json": components["schemas"]["WorkflowInvocationResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -25184,6 +27244,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["InvocationJobsResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -25219,6 +27285,12 @@ export interface operations {
                     "application/json": components["schemas"]["InvocationReport"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -25248,6 +27320,12 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: never;
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -25285,6 +27363,12 @@ export interface operations {
                     )[];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -25318,6 +27402,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["InvocationStep"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -25360,6 +27450,12 @@ export interface operations {
                     "application/json": components["schemas"]["InvocationStep"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -25390,6 +27486,12 @@ export interface operations {
                     "application/json": Record<string, never>;
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -25417,6 +27519,12 @@ export interface operations {
                     "application/json": components["schemas"]["DrsObject"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -25442,6 +27550,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["DrsObject"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
             /** @description Validation Error */
@@ -25473,6 +27587,12 @@ export interface operations {
                     "application/json": Record<string, never>;
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -25502,6 +27622,12 @@ export interface operations {
                     "application/json": Record<string, never>;
                 };
             };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 content: {
@@ -25517,6 +27643,12 @@ export interface operations {
             200: {
                 content: {
                     "application/json": components["schemas"]["Service"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                content: {
+                    "application/json": components["schemas"]["MessageExceptionModel"];
                 };
             };
         };
