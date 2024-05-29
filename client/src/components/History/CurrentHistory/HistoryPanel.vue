@@ -85,7 +85,7 @@ const contentItemRefs = computed(() => {
 const currItemFocused = useActiveElement();
 const lastItemId = ref<string | null>(null);
 
-const { currentFilterText, currentHistoryId } = storeToRefs(useHistoryStore());
+const { currentFilterText, currentHistoryId, pinnedHistoriesSummarizedStatus } = storeToRefs(useHistoryStore());
 const { lastCheckedTime, totalMatchesCount, isWatching } = storeToRefs(useHistoryItemsStore());
 
 const historyStore = useHistoryStore();
@@ -134,6 +134,10 @@ const formattedSearchError = computed(() => {
         msg: err_msg,
         typeError: ValueError,
     };
+});
+
+const detailsSummarized = computed(() => {
+    return props.isMultiViewItem ? pinnedHistoriesSummarizedStatus.value : undefined;
 });
 
 const storeFilterText = computed(() => {
@@ -532,7 +536,7 @@ function setItemDragstart(
                     <HistoryDetails
                         :history="history"
                         :writeable="canEditHistory"
-                        :summarized="isMultiViewItem"
+                        :summarized="detailsSummarized"
                         @update:history="historyStore.updateHistory($event)" />
 
                     <HistoryMessages :history="history" />

@@ -62,13 +62,13 @@ library.add(
 interface Props {
     histories: HistorySummary[];
     history: HistorySummary;
-    title?: string;
     historiesLoading?: boolean;
+    minimal?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-    title: "Histories",
     historiesLoading: false,
+    minimal: false,
 });
 
 const showSwitchModal = ref(false);
@@ -99,11 +99,14 @@ function userTitle(title: string) {
 
 <template>
     <div>
-        <nav class="d-flex justify-content-between mx-3 my-2" aria-label="current history management">
-            <h2 class="m-1 h-sm">History</h2>
+        <nav
+            :class="{ 'd-flex justify-content-between mx-3 my-2': !props.minimal }"
+            aria-label="current history management">
+            <h2 v-if="!props.minimal" class="m-1 h-sm">History</h2>
 
             <BButtonGroup>
                 <BButton
+                    v-if="!props.minimal"
                     v-b-tooltip.top.hover.noninteractive
                     class="create-hist-btn"
                     data-description="create new history"
@@ -116,6 +119,7 @@ function userTitle(title: string) {
                 </BButton>
 
                 <BButton
+                    v-if="!props.minimal"
                     v-b-tooltip.top.hover.noninteractive
                     data-description="switch to another history"
                     size="sm"
@@ -130,10 +134,11 @@ function userTitle(title: string) {
                     v-b-tooltip.top.hover.noninteractive
                     no-caret
                     size="sm"
-                    variant="link"
+                    :variant="props.minimal ? 'outline-info' : 'link'"
                     toggle-class="text-decoration-none"
                     menu-class="history-options-button-menu"
                     title="History options"
+                    right
                     data-description="history options">
                     <template v-slot:button-content>
                         <FontAwesomeIcon fixed-width :icon="faBars" />
@@ -146,10 +151,12 @@ function userTitle(title: string) {
                             <span>Fetching histories from server</span>
                         </div>
 
-                        <span v-else>You have {{ totalHistoryCount }} histories.</span>
+                        <span v-else-if="!props.minimal">You have {{ totalHistoryCount }} histories.</span>
+                        <span v-else>Manage History</span>
                     </BDropdownText>
 
                     <BDropdownItem
+                        v-if="!props.minimal"
                         data-description="switch to multi history view"
                         :disabled="isAnonymous"
                         :title="userTitle('Open History Multiview')"
@@ -158,7 +165,7 @@ function userTitle(title: string) {
                         <span v-localize>Show Histories Side-by-Side</span>
                     </BDropdownItem>
 
-                    <BDropdownDivider />
+                    <BDropdownDivider v-if="!props.minimal" />
 
                     <BDropdownItem
                         :title="localize('Resume all Paused Jobs in this History')"
@@ -253,6 +260,7 @@ function userTitle(title: string) {
         </nav>
 
         <SelectorModal
+            v-if="!props.minimal"
             v-show="showSwitchModal"
             id="selector-history-modal"
             :histories="histories"
