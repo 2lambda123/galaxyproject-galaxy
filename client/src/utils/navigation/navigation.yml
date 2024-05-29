@@ -9,9 +9,11 @@
 _:  # global stuff
 
   selectors:
+    center_panel: '#center'
     editable_text: '.editable-text'
     tooltip_balloon: '.tooltip'
     tooltip_inner: .tooltip-inner
+    left_panel: '#left'
     left_panel_drag: '.flex-panel.left .drag-handle'
     left_panel_collapse: '.collapse-button.left'
     right_panel_drag: '.flex-panel.right .drag-handle'
@@ -39,10 +41,14 @@ masthead:
     _: '#masthead'
 
     # bootstrap-vue a tag doesn't work as link target, need to hit span inside
-    user: '#user.loggedin-only > a.nav-link.dropdown-toggle > span'
+    user: '#user.loggedin-only > a.nav-link > span'
     register_or_login: '#user.loggedout-only > .nav-link'
-
-    user_menu: '#user .dropdown-menu a'
+    logout: '#user.loggedin-only > .nav-link'
+    home: '#analysis'
+    help: '#help'
+    login: '#user'
+    libraries: '#library'
+    window_manager: '#enable-window-manager'
     workflow: '#workflow .nav-link'
 
     username:
@@ -55,29 +61,10 @@ masthead:
       selector: 'storage dashboard link'
       type: data-description
 
-  labels:
-    # top-level menus
-    admin: 'Admin'
-    analyze: 'Analyze Data'
-    data: 'Data'
-    help: 'Help'
-    user: 'User'
-    visualization: 'Visualization'
-    workflow: 'Workflow'
-
-    # user menu
-    logout: 'Sign Out'
-    preferences: 'Preferences'
-
-    # data menu
-    libraries: 'Data Libraries'
-    histories: 'Histories'
-    invocations: 'Workflow Invocations'
-    pages: 'Pages'
-    workflows: 'Workflows'
-
 preferences:
   selectors:
+    activity: "#activity-settings"
+    activity_expand: ".activity-panel-footer"
     sign_out: "#edit-preferences-sign-out"
     change_password: "#edit-preferences-password"
     manage_information: '#edit-preferences-information'
@@ -457,6 +444,7 @@ collection_builders:
 
 histories:
   selectors:
+    activity: '#activity-histories'
     advanced_search_toggle: '#histories-grid [data-description="toggle advanced search"]'
     advanced_search_name_input: '#histories-advanced-filter-name'
     advanced_search_tag_area: '#histories-advanced-filter-tag .stateless-tags button'
@@ -532,6 +520,7 @@ history_import:
 
 pages:
   selectors:
+    activity: "#activity-pages"
     create: '#page-create'
     submit: '#submit'
     create_title_input: '#form-element-title input'
@@ -600,6 +589,7 @@ tool_form:
 
 workflows:
   selectors:
+    activity: '#activity-workflows'
     shared_with_me_tab: '#shared-with-me'
     published_tab: '#published a'
     new_button: '#workflow-create'
@@ -650,6 +640,7 @@ workflows:
 visualization:
   selectors:
     _: '#center div.plugin-list'
+    activity: '#activity-visualizations'
     plugin_item: '[data-plugin-name*="${id}"]'
 
 trs_search:
@@ -855,6 +846,8 @@ workflow_show:
 
 invocations:
   selectors:
+    activity: "#activity-invocation"
+    activity_expand: ".activity-panel-footer"
     invocations_table: '#invocations-grid .grid-table'
     invocations_table_rows: '#invocations-grid .grid-table [data-description="grid item"]'
     pager: '[data-description="grid pager"]'
@@ -899,6 +892,15 @@ tour:
       content: '${_} .tour-content'
       next: '${_} .tour-next'
       end: '${_} .tour-end'
+
+tools:
+  selectors:
+    activity: '#activity-tools'
+    body: '#center #tool-card-body'
+    execute: '#execute'
+    help: 'div.form-help'
+    search: '.search-query'
+    title: '.toolSectionTitle'
 
 admin:
   allowlist:
@@ -1128,6 +1130,7 @@ upload:
     source_button: '#upload-row-${n} .upload-source'
     start: '#activity-upload'
     start_button: '#btn-start'
+    local_button: '#btn-local'
 
 new_user_welcome:
   selectors:

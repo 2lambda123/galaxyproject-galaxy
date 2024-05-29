@@ -2,7 +2,7 @@
     <div>
         <div v-if="!hasQuota" class="quota-text d-flex align-items-center">
             <b-link
-                v-b-tooltip.hover.left
+                v-b-tooltip.hover.bottom
                 to="/storage"
                 :disabled="isAnonymous"
                 class="ml-auto"
@@ -93,7 +93,6 @@ export default {
 .quote-container {
     position: relative;
     height: 100%;
-    margin-right: 0.5rem;
 }
 .quota-text {
     @extend .quote-container;
