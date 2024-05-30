@@ -4,6 +4,7 @@ import shutil
 from datetime import datetime
 
 from lxml import etree
+import lxml.etree
 
 desc = """
 Fix shed_data_manager_conf.xml
@@ -41,7 +42,7 @@ parser.add_argument("--dry-run", action="store_true", help="do not write resulti
 args = parser.parse_args()
 
 with open(args.shed_data_manager_conf) as fh:
-    tree = etree.parse(args.shed_data_manager_conf)
+    tree = etree.parse(args.shed_data_manager_conf, parser=lxml.etree.XMLParser(resolve_entities=False))
 root = tree.getroot()
 
 guid_mapping = {}

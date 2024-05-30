@@ -8,9 +8,10 @@ import sys
 from io import StringIO
 
 from lxml import etree
+import lxml.etree
 
 with open(sys.argv[2]) as f:
-    xmlschema_doc = etree.parse(f)
+    xmlschema_doc = etree.parse(f, parser=lxml.etree.XMLParser(resolve_entities=False))
 
 markdown_buffer = StringIO()
 
