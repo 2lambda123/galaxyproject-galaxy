@@ -22,7 +22,7 @@ def render(template_path: str, context: dict, custom_templates_dir: str) -> str:
     """Read and return templated content as string."""
     with _get_template_path(template_path, custom_templates_dir).open() as f:
         template_str = _get_template_body(f.read())
-    tmpl = Environment().from_string(template_str)
+    tmpl = Environment(autoescape=True).from_string(template_str)
     return tmpl.render(**context)
 
 

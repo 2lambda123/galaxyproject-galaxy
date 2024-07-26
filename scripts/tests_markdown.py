@@ -10,7 +10,7 @@ from mir import html_report
 
 DESCRIPTION = "Script to generate (potentially merged) HTML summary of Galaxy Test Performance"
 templateLoader = jinja2.FileSystemLoader(searchpath="./scripts")
-template_env = jinja2.Environment(loader=templateLoader)
+template_env = jinja2.Environment(loader=templateLoader, autoescape=True)
 TEMPLATE_FILE = "tests_markdown.tpl"
 TEMPLATE_COMPARE_FILE = "tests_markdown_compare.tpl"
 LINKS = [{"href": "https://github.com/galaxyproject/galaxy", "title": "Galaxy"}]
